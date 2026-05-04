@@ -1,0 +1,51 @@
+package ru.alexeev.mygraduation.app.config;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import lombok.extern.slf4j.Slf4j;
+import org.h2.tools.Server;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.json.ProblemDetailJacksonMixin;
+import ru.alexeev.mygraduation.common.util.JsonUtil;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.datatype.hibernate7.Hibernate7Module;
+import java.sql.SQLException;
+
+
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.*;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
+
+@Configuration
+@Slf4j
+public class AppConfig {
+
+    @Profile("!test")
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    Server h2Server() throws SQLException {
+        log.info("Start H2 TCP server");
+        return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "9092");
+    }
+
+    @JsonAutoDetect(fieldVisibility = NONE, getterVisibility = ANY)
+    interface MixIn extends ProblemDetailJacksonMixin {
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+        ObjectMapper mapper = JsonMapper.builder()
+                .changeDefaultVisibility(visibilityChecker -> visibilityChecker
+                        .withVisibility(PropertyAccessor.FIELD, ANY)
+                        .withVisibility(PropertyAccessor.GETTER, NONE)
+                        .withVisibility(PropertyAccessor.SETTER, NONE)
+                        .withVisibility(PropertyAccessor.IS_GETTER, NONE))
+                .addModule(new Hibernate7Module())
+                .addMixIn(ProblemDetail.class, MixIn.class)
+                .build();
+        JsonUtil.setMapper(mapper);
+        return mapper;
+    }
+}
