@@ -1,5 +1,6 @@
 package ru.alexeev.mygraduation.vote.web;
 
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public class VoteController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public VoteTo vote(@AuthenticationPrincipal AuthUser authUser, @RequestParam int restaurantId) {
+    public VoteTo vote(@AuthenticationPrincipal AuthUser authUser, @RequestParam @Min(1) int restaurantId) {
         log.info("user {} votes for restaurant {}", authUser.id(), restaurantId);
         Vote vote = voteService.vote(authUser.id(), restaurantId);
         return toVoteTo(vote);

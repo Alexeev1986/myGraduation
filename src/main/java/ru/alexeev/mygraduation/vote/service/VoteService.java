@@ -12,6 +12,7 @@ import ru.alexeev.mygraduation.user.repository.UserRepository;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.repository.VoteRepository;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -24,6 +25,7 @@ public class VoteService {
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final Clock clock;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
 
@@ -33,8 +35,12 @@ public class VoteService {
 
         User user = userRepository.getExisted(userId);
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
+        LocalDate today = LocalDate.now(clock);
+        LocalTime now = LocalTime.now(clock);
+
+        if (now.isAfter(DEADLINE)) {
+            throw new DataConflictException("Cannot vote or change vote after 11:00");
+        }
 
         return voteRepository.findByUserAndDate(userId, today)
                 .map(existingVote -> updateExistingVote(existingVote, restaurant, now))
@@ -58,7 +64,7 @@ public class VoteService {
     }
 
     public int getVotesCountForRestaurantToday(int restaurantId) {
-        return (int) voteRepository.countByRestaurantAndDate(restaurantId, LocalDate.now());
+        return (int) voteRepository.countByRestaurantAndDate(restaurantId, LocalDate.now(clock));
     }
 
     public List<Vote> findByUser(int userId) {

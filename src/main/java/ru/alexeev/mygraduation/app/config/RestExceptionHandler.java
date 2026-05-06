@@ -23,6 +23,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import ru.alexeev.mygraduation.common.error.AppException;
@@ -31,6 +33,7 @@ import ru.alexeev.mygraduation.common.error.ErrorType;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.file.AccessDeniedException;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +53,7 @@ public class RestExceptionHandler {
 
     static final Map<Class<? extends Throwable>, ErrorType> HTTP_STATUS_MAP = new LinkedHashMap<>() {
         {
+            put(HandlerMethodValidationException.class, BAD_REQUEST);
             put(NoResourceFoundException.class, NOT_FOUND);
             put(AuthenticationException.class, UNAUTHORIZED);
             put(FileNotFoundException.class, NOT_FOUND);
@@ -63,6 +67,8 @@ public class RestExceptionHandler {
             put(ServletRequestBindingException.class, BAD_REQUEST);
             put(RequestRejectedException.class, BAD_REQUEST);
             put(AccessDeniedException.class, FORBIDDEN);
+            put(DateTimeParseException.class, BAD_REQUEST);
+            put(MethodArgumentTypeMismatchException.class, BAD_REQUEST);
         }
     };
 

@@ -1,5 +1,6 @@
 package ru.alexeev.mygraduation.restaurant.to;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -15,6 +16,7 @@ public class MenuTo extends BaseTo {
     @NotNull
     LocalDate date;
 
+    @NotEmpty
     List<DishTo> dishes;
 
     public MenuTo(Integer id, LocalDate date, List<DishTo> dishes) {

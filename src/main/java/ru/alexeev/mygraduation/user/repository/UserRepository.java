@@ -30,7 +30,4 @@ public interface UserRepository extends BaseRepository<User> {
         user.setEmail(user.getEmail().toLowerCase());
         return save(user);
     }
-
-
-    int id(Integer id);
 }

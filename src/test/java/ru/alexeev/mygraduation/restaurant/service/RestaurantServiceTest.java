@@ -3,6 +3,7 @@ package ru.alexeev.mygraduation.restaurant.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
@@ -20,6 +21,7 @@ import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.*;
 
 @SpringBootTest
 @Transactional
+@ActiveProfiles("test")
 class RestaurantServiceTest {
 
     @Autowired
@@ -29,7 +31,7 @@ class RestaurantServiceTest {
     void getAll() {
         List<Restaurant> restaurants = restaurantService.getAll();
         assertThat(restaurants).hasSize(3);
-        RESTAURANT_MATCHER.assertMatch(restaurants, List.of(restaurant2, restaurant3, restaurant1));
+        RESTAURANT_MATCHER.assertMatch(restaurants, getAllRestaurants());
     }
 
     @Test
@@ -121,7 +123,7 @@ class RestaurantServiceTest {
 
         Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, tomorrow);
         assertThat(menu.getDishes()).hasSize(1);
-        assertThat(menu.getDishes().get(0).getName()).isEqualTo("Пицца");
+        assertThat(menu.getDishes().getFirst().getName()).isEqualTo("Пицца");
     }
 
     @Test

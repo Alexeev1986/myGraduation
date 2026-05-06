@@ -68,6 +68,14 @@ public class RestaurantService {
             throw new DataConflictException("Cannot add menu for past date");
         }
 
+        long distinctCount = menuTo.getDishes().stream()
+                .map(dishTo -> dishTo.getName().toLowerCase() + "|" + dishTo.getPrice())
+                .distinct()
+                .count();
+
+        if (distinctCount != menuTo.getDishes().size()) {
+            throw new DataConflictException("Menu cannot contain duplicate dishes");
+        }
         menuRepository.getByRestaurantAndDate(restaurantId, date)
                 .ifPresent(menu -> menuRepository.deleteExisted(menu.getId()));
 

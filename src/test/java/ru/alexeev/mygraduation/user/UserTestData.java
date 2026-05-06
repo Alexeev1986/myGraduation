@@ -4,8 +4,8 @@ import ru.alexeev.mygraduation.MatcherFactory;
 import ru.alexeev.mygraduation.common.util.JsonUtil;
 import ru.alexeev.mygraduation.user.model.Role;
 import ru.alexeev.mygraduation.user.model.User;
-
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 
 public class UserTestData {
@@ -29,16 +29,36 @@ public class UserTestData {
         return new User(null, "New", "new@mail.ru", "{noop}newPass", true, new Date(), Role.USER);
     }
 
+    public static User getNewWithTooLongName() {
+        return new User(null, "A".repeat(130), "new@mail.ru", "{noop}newPass", true, new Date(), Role.USER);
+    }
+
+    public static User getNewWithNullRoles() {
+        return new User(null, "New", "new@mail.ru", "{noop}newPass", true, new Date(), EnumSet.noneOf(Role.class));
+    }
+
+    public static User getNewWithShortPassword() {
+        return new User(null, "New", "new@mail.ru", "{noop}123", true, new Date(), Role.USER);
+    }
+
     public static User getUpdated() {
         return new User(USER_ID, "UpdatedName", USER_MAIL, "newPass", false, new Date(), List.of(Role.ADMIN));
+    }
+
+    public static User getUpdatedWithMismatchId() {
+        return new User(999, "UpdatedName", USER_MAIL, "newPass", false, new Date(), List.of(Role.ADMIN));
+    }
+
+    public static User getUpdatedWithInvalidEmail() {
+        return new User(USER_ID, "UpdatedName", "", "newPass", false, new Date(), List.of(Role.ADMIN));
     }
 
     public static User getDuplicateEmail() {
         return new User(null, "Duplicate", USER_MAIL, "password", true, new Date(), Role.USER);
     }
 
-    public static User getDuplicateWithAdminEmail() {
-        return new User(USER_ID, "Updated", ADMIN_MAIL, "password", true, new Date(), Role.USER);
+    public static User getWithAdminDuplicateEmail() {
+        return new User(null, "Duplicate", ADMIN_MAIL, "password", true, new Date(), Role.USER);
     }
 
     public static User getInvalidEmail() {
@@ -49,10 +69,27 @@ public class UserTestData {
         return new User(null, "Invalid", "invalid@mail.ru", "123", true, new Date(), Role.USER);
     }
 
-
-
-    public static String jsonWithPassword(User user, String passw) {
-        return JsonUtil.writeAdditionProps(user, "password", passw);
+    public static User getWithEmptyName() {
+        return new User(null, "", "new@mail.ru", "{noop}newPass", true, new Date(), Role.USER);
     }
 
+    public static User getWithHtmlUnsafeName() {
+        return new User(null, "<script>alert(123)</script>", "new@mail.ru", "{noop}newPass", true, new Date(), Role.USER);
+    }
+
+    public static User getUserToWithEnabledFalse() {
+        return new User(USER_ID, "UpdatedName", USER_MAIL, "newPass", false, new Date(), List.of(Role.ADMIN));
+    }
+
+    public static User getUserToWithEnabledFalseAndIdNull() {
+        return new User(null, "UpdatedName", "unikal@mail.ru", "newPass", false, new Date(), List.of(Role.ADMIN));
+    }
+
+    public static User getUserWithMultipleRoles() {
+        return new User(null, "New", "new@mail.ru", "newPassword", Role.USER, Role.ADMIN);
+    }
+
+    public static String jsonWithPassword(User user, String password) {
+        return JsonUtil.writeAdditionProps(user, "password", password);
+    }
 }

@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.user.model.User;
@@ -16,6 +17,7 @@ import static ru.alexeev.mygraduation.user.util.UsersUtil.createToFromUser;
 
 @SpringBootTest
 @Transactional
+@ActiveProfiles("test")
 class UserServiceTest {
 
     @Autowired

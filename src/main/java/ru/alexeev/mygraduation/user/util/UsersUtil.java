@@ -25,4 +25,8 @@ public class UsersUtil {
     public static UserTo createToFromUser(User user) {
         return new UserTo(user.getId(), user.getName(), user.getEmail(), user.getPassword(), user.isEnabled(), user.getRoles());
     }
+
+    public static UserTo createUserToWithPassword(User user, String password) {
+        return new UserTo(user.getId(), user.getName(), user.getEmail(), password, user.isEnabled(), user.getRoles());
+    }
 }

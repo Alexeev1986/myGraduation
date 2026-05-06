@@ -1,9 +1,6 @@
 package ru.alexeev.mygraduation.user.to;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import ru.alexeev.mygraduation.common.HasIdAndEmail;
@@ -11,7 +8,7 @@ import ru.alexeev.mygraduation.common.to.NamedTo;
 import ru.alexeev.mygraduation.common.validation.NoHtml;
 import ru.alexeev.mygraduation.user.model.Role;
 
-import java.util.Set;
+import java.util.*;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
@@ -30,7 +27,7 @@ public class UserTo extends NamedTo implements HasIdAndEmail {
     @NotNull(message = "enabled must be specified")
     boolean enabled;
 
-    @NotNull(message = "roles must be specified")
+    @NotEmpty(message = "At least one role is required")
     Set<Role> roles;
 
     public UserTo(Integer id, String name, String email, String password, boolean enabled, Set<Role> roles) {
@@ -40,7 +37,6 @@ public class UserTo extends NamedTo implements HasIdAndEmail {
         this.enabled = enabled;
         this.roles = roles;
     }
-
 
     @Override
     public String toString() {
