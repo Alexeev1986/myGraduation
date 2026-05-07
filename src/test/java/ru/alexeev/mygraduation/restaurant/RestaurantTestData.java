@@ -25,6 +25,11 @@ public class RestaurantTestData {
     public static final MatcherFactory.Matcher<Dish> DISH_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Dish.class, "id");
 
+    public static final MatcherFactory.Matcher<Dish> DISH_WITH_ID_MATCHER =
+            MatcherFactory.usingIgnoringFieldsComparator(Dish.class);
+
+    public static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
+
     public static final int RESTAURANT1_ID = 1;
     public static final int RESTAURANT2_ID = 2;
     public static final int RESTAURANT3_ID = 3;
@@ -81,15 +86,11 @@ public class RestaurantTestData {
     }
 
     public static MenuTo getNewMenuToForRestaurant1() {
-        return newMenuTo(LocalDate.now().plusDays(1), List.of(dish1, dish2, dish4, dish5));
+        return newMenuTo(TOMORROW, List.of(dish1, dish2, dish4, dish5));
     }
 
     public static MenuTo getUpdatedMenuToForRestaurant1() {
-        return newMenuTo(LocalDate.now().plusDays(1), List.of(dish1, dish2, dish3, dish4, dish5));
-    }
-
-    public static MenuTo getMenuWithThePastDate() {
-        return newMenuTo(LocalDate.now().minusDays(1), List.of(dish1, dish2));
+        return newMenuTo(TOMORROW, List.of(dish1, dish2, dish3, dish4, dish5));
     }
 
     public static MenuTo getMenuWithNullDate() {
@@ -97,6 +98,6 @@ public class RestaurantTestData {
     }
 
     public static MenuTo getMenuWithEmptyDishes() {
-        return new MenuTo(null, LocalDate.now().plusDays(1), List.of());
+        return new MenuTo(null, TOMORROW, List.of());
     }
 }

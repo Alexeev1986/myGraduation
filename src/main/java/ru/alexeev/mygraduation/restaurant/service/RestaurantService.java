@@ -2,6 +2,7 @@ package ru.alexeev.mygraduation.restaurant.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
@@ -20,6 +21,9 @@ import java.util.List;
 @AllArgsConstructor
 @Slf4j
 public class RestaurantService {
+
+    @Autowired
+    private MenuValidator menuValidator;
 
     private final RestaurantRepository restaurantRepository;
     private final MenuRepository menuRepository;
@@ -62,20 +66,9 @@ public class RestaurantService {
     public void addMenu(int restaurantId, MenuTo menuTo) {
         log.info("add menu for restaurant {} on {}", restaurantId, menuTo.getDate());
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
+        menuValidator.validate(menuTo);
+
         LocalDate date = menuTo.getDate();
-
-        if (date.isBefore(LocalDate.now())) {
-            throw new DataConflictException("Cannot add menu for past date");
-        }
-
-        long distinctCount = menuTo.getDishes().stream()
-                .map(dishTo -> dishTo.getName().toLowerCase() + "|" + dishTo.getPrice())
-                .distinct()
-                .count();
-
-        if (distinctCount != menuTo.getDishes().size()) {
-            throw new DataConflictException("Menu cannot contain duplicate dishes");
-        }
         menuRepository.getByRestaurantAndDate(restaurantId, date)
                 .ifPresent(menu -> menuRepository.deleteExisted(menu.getId()));
 

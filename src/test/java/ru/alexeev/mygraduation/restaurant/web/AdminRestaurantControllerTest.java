@@ -1,6 +1,8 @@
 package ru.alexeev.mygraduation.restaurant.web;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -16,6 +18,7 @@ import ru.alexeev.mygraduation.restaurant.service.RestaurantService;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -174,8 +177,6 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-
-
     @Test
     @WithMockUser(roles = "ADMIN")
     void addMenu() throws Exception {
@@ -212,18 +213,6 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
         Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, updateMenuTo.getDate());
         assertThat(created).isNotNull();
         DISH_MATCHER.assertMatch(created.getDishes(), toDishes(updateMenuTo.getDishes()));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void addMenuWithThePastDate() throws Exception {
-        MenuTo pastDateMenu = getMenuWithThePastDate();
-
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JsonUtil.writeValue(pastDateMenu)))
-                .andDo(print())
-                .andExpect(status().isConflict());
     }
 
     @Test
@@ -285,26 +274,69 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    @Test
+    @ParameterizedTest
+    @CsvSource({
+            "0, 422, false",
+            "1, 422, false",
+            "2, 201, true",
+            "3, 201, true",
+            "4, 201, true",
+            "5, 201, true",
+            "6, 422, false"
+    })
     @WithMockUser(roles = "ADMIN")
-    void addMenuWithNewDish() throws Exception {
-        Dish newDish = new Dish(null, "Новое блюдо", 999);
-        MenuTo menuTo = newMenuTo(LocalDate.now().plusDays(1), List.of(newDish));
+    void addMenuWithDifferentDishCounts(int dishCount, int expectedStatus, boolean shouldSucceed) throws Exception {
+        List<Dish> dishes = new ArrayList<>();
+        for (int i = 1; i <= dishCount; i++) {
+            dishes.add(new Dish(null, "Новое блюдо № " + i, 100 + i));
+        }
+
+        MenuTo menuTo = newMenuTo(TOMORROW, dishes);
 
         perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
-                .andExpect(status().isCreated());
+                .andExpect(status().is(expectedStatus));
 
-        Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
-        DISH_MATCHER.assertMatch(created.getDishes(), newDish);
+        if (shouldSucceed) {
+            Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
+            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 409, false",
+            "-1, 409, false",
+            "0, 201, true",
+            "1, 201, true",
+            "2, 201, true",
+    })
+    @WithMockUser(roles = "ADMIN")
+    void addMenuForDifferentDates(int daysOffset, int expectedStatus, boolean shouldSucceed) throws Exception {
+        LocalDate date = LocalDate.now().plusDays(daysOffset);
+        List<Dish> dishes = List.of(dish1, dish2);
+        MenuTo menuTo = newMenuTo(date, dishes);
+
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(menuTo)))
+                .andDo(print())
+                .andExpect(status().is(expectedStatus));
+
+        if (shouldSucceed) {
+            Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, date);
+            assertThat(created).isNotNull();
+            assertThat(created.getDate()).isEqualTo(date);
+            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+        }
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void addMenuReusesExistingDish() throws Exception {
-        MenuTo menuTo = newMenuTo(LocalDate.now().plusDays(1), List.of(dish1));
+        MenuTo menuTo = newMenuTo(TOMORROW, List.of(dish1, dish2));
 
         perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -313,16 +345,14 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
                 .andExpect(status().isCreated());
 
         Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
-        Dish usedDish = created.getDishes().getFirst();
-        assertThat(usedDish.id()).isEqualTo(dish1.id());
-        assertThat(usedDish.getName()).isEqualTo(dish1.getName());
+        DISH_MATCHER.assertMatch(created.getDishes(), List.of(dish1, dish2));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void addMenuWithDuplicateDishInMenuShouldFail() throws Exception {
-        List<Dish> duplicateDishes = List.of(dish1, dish1);
-        MenuTo menuTo = newMenuTo(LocalDate.now().plusDays(1), duplicateDishes);
+        List<Dish> duplicateDishes = List.of(dish1, dish2, dish1);
+        MenuTo menuTo = newMenuTo(TOMORROW, duplicateDishes);
 
         perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
                 .contentType(MediaType.APPLICATION_JSON)
