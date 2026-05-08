@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.alexeev.mygraduation.AbstractControllerTest;
 import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.repository.UserRepository;
+import ru.alexeev.mygraduation.user.service.UserService;
 import ru.alexeev.mygraduation.vote.to.VoteTo;
 
 import java.util.List;
@@ -21,10 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.alexeev.mygraduation.user.UserTestData.*;
 import static ru.alexeev.mygraduation.user.UserTestData.NOT_FOUND;
+import static ru.alexeev.mygraduation.user.util.UsersUtil.createToFromUser;
 import static ru.alexeev.mygraduation.user.web.AdminUserController.REST_URL;
 import static ru.alexeev.mygraduation.user.web.UniqueMailValidator.EXCEPTION_DUPLICATE_EMAIL;
 import static ru.alexeev.mygraduation.vote.VoteTestData.*;
-import static ru.alexeev.mygraduation.vote.util.VoteUtil.toVoteTo;
+import static ru.alexeev.mygraduation.vote.util.VoteUtil.toVoteTos;
 
 class AdminUserControllerTest extends AbstractControllerTest {
 
@@ -32,6 +34,8 @@ class AdminUserControllerTest extends AbstractControllerTest {
 
     @Autowired
     private UserRepository repository;
+    @Autowired
+    private UserService userService;
 
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
@@ -81,7 +85,7 @@ class AdminUserControllerTest extends AbstractControllerTest {
                 .andExpect(status().isOk());
         List<VoteTo> voteTos = VOTE_TO_MATCHER.readListFromJson(actions);
 
-        VOTE_TO_MATCHER.assertMatch(voteTos, toVoteTo(vote1));
+        VOTE_TO_MATCHER.assertMatch(voteTos, toVoteTos(List.of(vote1, vote3, vote6)));
     }
 
     @Test
@@ -95,7 +99,9 @@ class AdminUserControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void getUserVotesNotVotes() throws Exception {
-        ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL_SLASH + GUEST_ID + "/votes"))
+        User newUser = getNew();
+        User created = userService.create(createToFromUser(newUser));
+        ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL_SLASH + created.id() + "/votes"))
                 .andDo(print())
                 .andExpect(status().isOk());
         List<VoteTo> votes = VOTE_TO_MATCHER.readListFromJson(actions);

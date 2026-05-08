@@ -11,11 +11,18 @@ import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.repository.UserRepository;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.repository.VoteRepository;
+import ru.alexeev.mygraduation.vote.to.VoteResultTo;
+import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static ru.alexeev.mygraduation.vote.util.VoteUtil.convertToVoteResultTos;
 
 @Service
 @AllArgsConstructor
@@ -26,6 +33,7 @@ public class VoteService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
+    private final WinnerValidator winnerValidator;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
 
@@ -35,7 +43,7 @@ public class VoteService {
 
         User user = userRepository.getExisted(userId);
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now(clock);
 
         if (now.isAfter(DEADLINE)) {
@@ -72,5 +80,46 @@ public class VoteService {
         userRepository.getExisted(userId);
         return voteRepository.findByUser(userId)
                 .orElse(List.of());
+    }
+
+    @Transactional(readOnly = true)
+    public List<VoteResultTo> getTodayVoteResults() {
+        log.info("get today results");
+        return getVoteResultsForDate(LocalDate.now(clock));
+    }
+
+    @Transactional(readOnly = true)
+    public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
+        log.info("get vote results for date {}", date);
+        List<Object[]> rawResults = voteRepository.getVoteResultsRawForDate(date);
+        return convertToVoteResultTos(rawResults);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<VoteResultTo> getTodayWinner() {
+        List<VoteResultTo> result = getTodayVoteResults();
+        return winnerValidator.determineWinner(result);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<LocalDate, List<VoteResultTo>> getVoteResultsForDateRange(LocalDate start, LocalDate end) {
+        log.info("get vote results from {} to {}", start, end);
+        Map<LocalDate, List<VoteResultTo>> results = new LinkedHashMap<>();
+        LocalDate current = start;
+        while (!current.isAfter(end)) {
+            results.put(current, getVoteResultsForDate(current));
+            current = current.plusDays(1);
+        }
+        return results;
+    }
+
+    @Transactional(readOnly = true)
+    public VoteStatsTo getGeneralStats() {
+        log.info("get general voting statistics");
+        long totalVotes = voteRepository.count();
+        long totalUsersWhoVoted = voteRepository.countDistinctUsers();
+
+        double averageVotesPerUsers = totalUsersWhoVoted > 0 ? (double) totalVotes / totalUsersWhoVoted : 0;
+        return new VoteStatsTo(totalVotes, totalUsersWhoVoted, averageVotesPerUsers);
     }
 }

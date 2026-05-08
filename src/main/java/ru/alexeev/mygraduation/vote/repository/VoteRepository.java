@@ -15,6 +15,16 @@ public interface VoteRepository extends BaseRepository<Vote> {
     @Query("SELECT COUNT(v) FROM Vote v WHERE v.restaurant.id=:restaurantId AND v.voteDate=:date")
     long countByRestaurantAndDate(int restaurantId, LocalDate date);
 
-    @Query("SELECT v FROM Vote v JOIN FETCH v.restaurant WHERE v.user.id=:userId")
+    @Query("SELECT v FROM Vote v JOIN FETCH v.restaurant WHERE v.user.id=:userId ORDER BY v.voteDate DESC ")
     Optional<List<Vote>> findByUser(int userId);
+
+    @Query("SELECT r.id, r.name, COUNT(v.id) " +
+            "FROM Restaurant r " +
+            "LEFT JOIN Vote v ON v.restaurant.id=r.id AND v.voteDate=:date " +
+            "GROUP BY r.id, r.name " +
+            "ORDER BY COUNT(v.id) DESC ")
+    List<Object[]> getVoteResultsRawForDate(LocalDate date);
+
+    @Query("SELECT COUNT(DISTINCT v.user.id) FROM Vote v")
+    long countDistinctUsers();
 }

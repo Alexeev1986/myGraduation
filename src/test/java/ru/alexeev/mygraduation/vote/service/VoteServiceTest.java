@@ -16,23 +16,26 @@ import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.service.UserService;
 import ru.alexeev.mygraduation.vote.model.Vote;
+import ru.alexeev.mygraduation.vote.to.VoteResultTo;
+import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
+
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT1_ID;
-import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT3_ID;
+import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.*;
 import static ru.alexeev.mygraduation.user.UserTestData.ADMIN_ID;
 import static ru.alexeev.mygraduation.user.UserTestData.USER_ID;
 import static ru.alexeev.mygraduation.user.UserTestData.getNew;
 import static ru.alexeev.mygraduation.user.util.UsersUtil.createToFromUser;
+import static ru.alexeev.mygraduation.vote.VoteTestData.*;
 import static ru.alexeev.mygraduation.vote.VoteTestData.NOT_FOUND;
-import static ru.alexeev.mygraduation.vote.VoteTestData.VOTE_MATCHER;
-import static ru.alexeev.mygraduation.vote.VoteTestData.setFixedTime;
-import static ru.alexeev.mygraduation.vote.VoteTestData.vote1;
-import static ru.alexeev.mygraduation.vote.VoteTestData.vote2;
 
 @SpringBootTest
 @Transactional
@@ -54,16 +57,6 @@ class VoteServiceTest {
     void setUp() {
 
         setFixedTime(clock, 10, 30);
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-            "1, 1",
-            "3, 0"})
-    void getVotesCountForRestaurantToday(int restaurantId, int expectedCount) {
-        setFixedTime(clock, 11, 30);
-        int count = voteService.getVotesCountForRestaurantToday(restaurantId);
-        assertThat(count).isEqualTo(expectedCount);
     }
 
     @Test
@@ -147,10 +140,10 @@ class VoteServiceTest {
     @Test
     void findByUser() {
         List<Vote> votesForUser = voteService.findByUser(USER_ID);
-        VOTE_MATCHER.assertMatch(votesForUser, vote1);
+        VOTE_MATCHER.assertMatch(votesForUser, List.of(vote1, vote3, vote6));
 
         List<Vote> votesForAdmin = voteService.findByUser(ADMIN_ID);
-        VOTE_MATCHER.assertMatch(votesForAdmin, vote2);
+        VOTE_MATCHER.assertMatch(votesForAdmin, List.of(vote2, vote4, vote7));
     }
 
     @Test
@@ -163,13 +156,168 @@ class VoteServiceTest {
         VOTE_MATCHER.assertMatch(firstVote, secondVote);
 
         List<Vote> votes = voteService.findByUser(USER_ID);
-        assertThat(votes.size()).isEqualTo(1);
+        assertThat(votes.size()).isEqualTo(3);
     }
 
     @Test
     void findByUserNotFound() {
         assertThatThrownBy(() -> voteService.findByUser(NOT_FOUND))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 1, 2",
+            "-2, 2, 1",
+            "-2, 3, 0",
+            "-1, 1, 1",
+            "-1, 2, 1",
+            "-1, 3, 1",
+            "0, 1, 1",
+            "0, 2, 1",
+            "0, 3, 0"
+    })
+    void getVoteResultsForDate(int dayOffset, int restaurantId, Integer expectedCount) {
+        LocalDate date = LocalDate.now(clock).plusDays(dayOffset);
+        setFixedDate(clock, date, 10, 30);
+
+        List<VoteResultTo> results = voteService.getVoteResultsForDate(date);
+        assertThat(results).isNotNull();
+        assertThat(results.size()).isEqualTo(3);
+
+        VoteResultTo result = results.stream()
+                .filter(r -> r.getRestaurantId().equals(restaurantId))
+                .findFirst()
+                .orElse(null);
+        assertThat(Objects.requireNonNull(result).getVotesCount()).isEqualTo(expectedCount);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 1, true",
+            "-1, 1, false",
+            "0, 1, false",
+            "10, 0, false"
+    })
+    void getTodayWinner(int dayOffset, int expectedWinnerId, boolean shouldBePresent) {
+        LocalDate date = LocalDate.now().plusDays(dayOffset);
+        setFixedDate(clock, date, 10, 30);
+
+        Optional<VoteResultTo> winner = voteService.getTodayWinner();
+        if (shouldBePresent) {
+            assertThat(winner).isPresent();
+            assertThat(winner.get().getRestaurantId()).isEqualTo(expectedWinnerId);
+        } else {
+            assertThat(winner).isEmpty();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 3",
+            "-1, 3",
+            "0, 2",
+            "10, 0"
+    })
+    void getTotalVotesForDate(int dayOffset, int expectedTotalVotes) {
+        LocalDate date = LocalDate.now().plusDays(dayOffset);
+        setFixedDate(clock, date, 10, 30);
+
+        List<VoteResultTo> results = voteService.getVoteResultsForDate(date);
+
+        int totalVotes = results.stream()
+                .mapToInt(VoteResultTo::getVotesCount)
+                .sum();
+        assertThat(totalVotes).isEqualTo(expectedTotalVotes);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, -1, 2",
+            "-2, 0, 3",
+            "-1, 0, 2",
+            "0, 0, 1",
+            "-2, -2, 1"
+    })
+    void getVoteResultsForDateRange(int startOffset, int endOffset, int expectedDays) {
+        LocalDate start = LocalDate.now().plusDays(startOffset);
+        LocalDate end = LocalDate.now().plusDays(endOffset);
+
+        Map<LocalDate, List<VoteResultTo>> results = voteService.getVoteResultsForDateRange(start, end);
+
+        assertThat(results).isNotNull();
+        assertThat(results.size()).isEqualTo(expectedDays);
+
+        LocalDate current = start;
+        while (!current.isAfter(end)) {
+            assertThat(results).containsKey(current);
+            current = current.plusDays(1);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "1, 3",
+            "2, 3",
+            "3, 2"
+    })
+    void getUserTotalVotes(int userId, int expectedVotesCount) {
+        List<Vote> votes = voteService.findByUser(userId);
+        assertThat(votes).isNotNull();
+        assertThat(votes.size()).isEqualTo(expectedVotesCount);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "1, 1",
+            "2, 1",
+            "3, 0"
+    })
+    void getVotesCountForRestaurantToday(int restaurantId, int expectedCount) {
+        setFixedDate(clock, LocalDate.now(clock), 10, 30);
+        int actualCount = voteService.getVotesCountForRestaurantToday(restaurantId);
+        assertThat(actualCount).isEqualTo(expectedCount);
+    }
+
+
+    @Test
+    void getGeneralStats() {
+        VoteStatsTo stats = voteService.getGeneralStats();
+        VOTE_STATS_TO_MATCHER.assertMatch(stats, expectedStats);
+    }
+
+    @Test
+    void getGeneralStatsAfterNewVote() {
+        setFixedTime(clock, 10, 30);
+        User newUser = createNewUser();
+        VoteStatsTo beforeStats = voteService.getGeneralStats();
+
+        voteService.vote(newUser.getId(), RESTAURANT1_ID);
+
+        VoteStatsTo afterStats = voteService.getGeneralStats();
+
+        assertThat(afterStats.getTotalVotes()).isEqualTo(beforeStats.getTotalVotes() + 1);
+        assertThat(afterStats.getTotalUserWhoVoted()).isEqualTo(beforeStats.getTotalUserWhoVoted() + 1);
+    }
+
+    @Test
+    void getAllRestaurantsHaveResultsWithZeroVotes() {
+        LocalDate futureDate = LocalDate.now().plusDays(10);
+        setFixedDate(clock, futureDate, 10, 30);
+        List<VoteResultTo> results = voteService.getVoteResultsForDate(futureDate);
+
+        assertThat(results).isNotNull();
+        assertThat(results.size()).isEqualTo(3);
+
+        List<Integer> restaurantIds = results.stream()
+                .map(VoteResultTo::getRestaurantId)
+                .toList();
+
+        assertThat(restaurantIds).contains(RESTAURANT1_ID, RESTAURANT2_ID, RESTAURANT3_ID);
+
+        for (VoteResultTo result : results) {
+            assertThat(result.getVotesCount()).isZero();
+        }
     }
 
     private User createNewUser() {

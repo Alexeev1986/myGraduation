@@ -12,7 +12,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ru.alexeev.mygraduation.app.AuthUser;
 import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.to.UserTo;
+import ru.alexeev.mygraduation.vote.model.Vote;
+import ru.alexeev.mygraduation.vote.service.VoteService;
+
 import java.net.URI;
+import java.util.List;
 
 import static ru.alexeev.mygraduation.common.validation.ValidationUtil.assureIdConsistent;
 
@@ -22,11 +26,18 @@ import static ru.alexeev.mygraduation.common.validation.ValidationUtil.assureIdC
 @Slf4j
 public class ProfileController extends AbstractUserController{
     static final String REST_URL = "/api/profile";
+    private final VoteService voteService;
 
     @GetMapping
     public User get(@AuthenticationPrincipal AuthUser authUser) {
         log.info("get profile for user {}", authUser.id());
         return authUser.getUser();
+    }
+
+    @GetMapping("/votes")
+    public List<Vote> getMyVotes(@AuthenticationPrincipal AuthUser authUser) {
+        log.info("get my votes for user {}", authUser.id());
+        return voteService.findByUser(authUser.id());
     }
 
     @DeleteMapping
@@ -52,4 +63,6 @@ public class ProfileController extends AbstractUserController{
         assureIdConsistent(userTo, authUser.id());
         userService.update(userTo, authUser.id());
     }
+
+
 }

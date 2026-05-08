@@ -3,18 +3,16 @@ package ru.alexeev.mygraduation.vote.web;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import ru.alexeev.mygraduation.AbstractControllerTest;
 import ru.alexeev.mygraduation.vote.model.Vote;
-import ru.alexeev.mygraduation.vote.service.VoteService;
+import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteTo;
-import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -24,19 +22,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT1_ID;
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT3_ID;
 import static ru.alexeev.mygraduation.user.UserTestData.USER_ID;
-import static ru.alexeev.mygraduation.vote.VoteTestData.NOT_FOUND;
-import static ru.alexeev.mygraduation.vote.VoteTestData.VOTE_TO_MATCHER;
-import static ru.alexeev.mygraduation.vote.VoteTestData.setFixedTime;
+import static ru.alexeev.mygraduation.vote.VoteTestData.*;
 import static ru.alexeev.mygraduation.vote.util.VoteUtil.toVoteTo;
 import static ru.alexeev.mygraduation.vote.web.VoteController.REST_URL;
 
-class VoteControllerTest extends AbstractControllerTest {
-
-    @Autowired
-    private VoteService voteService;
-
-    @MockitoBean
-    private Clock clock;
+class VoteControllerTest extends AdminVoteControllerTest {
 
     @Test
     @WithUserDetails(value = "user@yandex.ru")
@@ -208,6 +198,88 @@ class VoteControllerTest extends AbstractControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().is(expectedStatus));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 2, 1, 0",
+            "-1, 1, 1, 1",
+            "0, 1, 1, 0"
+    })
+    @WithUserDetails(value = "user@yandex.ru")
+    void getTodayResults(int dayOffset, int expectedVotes1, int expectedVotes2, int expectedVotes3) throws Exception {
+        LocalDate date = LocalDate.now().plusDays(dayOffset);
+        setFixedDate(clock, date, 10, 30);
+
+        ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/today")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        List<VoteResultTo> actual = VOTE_RESULT_TO_MATCHER.readListFromJson(actions);
+
+        assertThat(actual).hasSize(3);
+        assertThat(actual.get(0).getVotesCount()).isEqualTo(expectedVotes1);
+        assertThat(actual.get(1).getVotesCount()).isEqualTo(expectedVotes2);
+        assertThat(actual.get(2).getVotesCount()).isEqualTo(expectedVotes3);
+    }
+
+    @Test
+    @WithUserDetails(value = "user@yandex.ru")
+    void getTodayResultsShouldBeSorted() throws Exception {
+        setFixedDate(clock, TWO_DAYS_AGO, 10, 30);
+
+        ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/today")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        List<VoteResultTo> actual = VOTE_RESULT_TO_MATCHER.readListFromJson(actions);
+
+        assertSortedByVotesDesc(actual);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "-2, 1, true",
+            "-1, 0, false",
+            "0, 0, false",
+            "10, 0, false"
+    })
+    @WithUserDetails(value = "user@yandex.ru")
+    void getTodayWinner(int dayOffset, int expectedWinnerId, boolean shouldBePresent) throws Exception {
+        LocalDate date = LocalDate.now().plusDays(dayOffset);
+        setFixedDate(clock, date, 10, 30);
+
+        if (shouldBePresent) {
+            ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/winner")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isOk());
+            VoteResultTo actual = VOTE_RESULT_TO_MATCHER.readFromJson(actions);
+            assertThat(actual.getRestaurantId()).isEqualTo(expectedWinnerId);
+        } else {
+            perform(MockMvcRequestBuilders.get(REST_URL + "/results/winner")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andExpect(status().isNoContent());
+        }
+    }
+
+    @Test
+    void getTodayWinnerWithUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/results/winner")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getTodayResultWithUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/results/today")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
     }
 
     private Vote getCurrentUserVote() {

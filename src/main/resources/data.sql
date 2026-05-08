@@ -35,5 +35,11 @@ INSERT INTO menu_dish (menu_id, dish_id) VALUES
 
 
 INSERT INTO vote (user_id, restaurant_id, vote_date, vote_time) VALUES
+    (2, 2, CURRENT_DATE - 2, '10:15:00'),
+    (1, 1, CURRENT_DATE - 2, '10:00:00'),
+    (3, 1, CURRENT_DATE - 2, '09:45:00'),
+    (2, 1, CURRENT_DATE - 1, '10:30:00'),
+    (1, 3, CURRENT_DATE - 1, '09:15:00'),
+    (3, 2, CURRENT_DATE - 1, '11:30:00'),
     (2, 1, CURRENT_DATE, '10:30:00'),
     (1, 2, CURRENT_DATE, '09:15:00');
