@@ -63,6 +63,4 @@ public class ProfileController extends AbstractUserController{
         assureIdConsistent(userTo, authUser.id());
         userService.update(userTo, authUser.id());
     }
-
-
 }

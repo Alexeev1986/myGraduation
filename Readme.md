@@ -209,7 +209,7 @@ curl -X GET "http://localhost:8080/api/votes/results/winner" -u user@yandex.ru:p
 После запуска приложения Swagger UI доступен по адресу:
 
 ```bash
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 ````
 
 ## HTTP статусы ответов
