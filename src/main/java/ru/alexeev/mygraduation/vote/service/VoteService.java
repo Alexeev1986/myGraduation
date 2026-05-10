@@ -35,10 +35,44 @@ public class VoteService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
-    private final WinnerValidator winnerValidator;
-    private final VoteService self;
+    private final CacheHelper cacheHelper;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
+
+    @Service
+    @AllArgsConstructor
+    @Slf4j
+    static class CacheHelper{
+        private final VoteRepository voteRepository;
+        private final WinnerValidator winnerValidator;
+
+        @Cacheable(value = "vote_results", key = "#date.toString()")
+        @Transactional(readOnly = true)
+        public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
+            log.info("get vote results for date {} - loading from DB", date);
+            List<Object[]> rawResults = voteRepository.getVoteResultsRawForDate(date);
+            return convertToVoteResultTos(rawResults);
+        }
+
+        @Cacheable(value = "today_winner", key = "#root.methodName")
+        @Transactional(readOnly = true)
+        public Optional<VoteResultTo> getTodayWinner(List<VoteResultTo> results) {
+            log.info("get today's winner - loading from DB");
+            return winnerValidator.determineWinner(results);
+        }
+    }
+
+    @Transactional
+    public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
+        log.info("get vote results for date {}", date);
+        return cacheHelper.getVoteResultsForDate(date);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<VoteResultTo> getTodayWinner() {
+        log.info("get today's winner");
+        return cacheHelper.getTodayWinner(getTodayVoteResults());
+    }
 
     @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
     @Transactional
@@ -89,22 +123,7 @@ public class VoteService {
     @Transactional(readOnly = true)
     public List<VoteResultTo> getTodayVoteResults() {
         log.info("get today results");
-        return self.getVoteResultsForDate(LocalDate.now(clock));
-    }
-
-    @Cacheable(value = "vote_results", key = "#date.toString()")
-    @Transactional(readOnly = true)
-    public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
-        log.info("get vote results for date {}", date);
-        List<Object[]> rawResults = voteRepository.getVoteResultsRawForDate(date);
-        return convertToVoteResultTos(rawResults);
-    }
-
-    @Cacheable(value = "today_winner", key = "#root.methodName")
-    @Transactional(readOnly = true)
-    public Optional<VoteResultTo> getTodayWinner() {
-        List<VoteResultTo> result = getTodayVoteResults();
-        return winnerValidator.determineWinner(result);
+        return cacheHelper.getVoteResultsForDate(LocalDate.now(clock));
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +132,7 @@ public class VoteService {
         Map<LocalDate, List<VoteResultTo>> results = new LinkedHashMap<>();
         LocalDate current = start;
         while (!current.isAfter(end)) {
-            results.put(current, self.getVoteResultsForDate(current));
+            results.put(current, cacheHelper.getVoteResultsForDate(current));
             current = current.plusDays(1);
         }
         return results;
