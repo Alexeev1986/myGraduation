@@ -3,6 +3,8 @@ package ru.alexeev.mygraduation.restaurant.service;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
@@ -39,18 +41,21 @@ public class RestaurantService {
         return restaurantRepository.getExisted(id);
     }
 
+    @Cacheable("restaurant_with_menu")
     public List<Restaurant> getAllWithTodayMenu() {
         log.info("getAllWithTodayMenu");
         return restaurantRepository.findAllWithTodayMenus();
     }
 
     @Transactional
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public Restaurant create(Restaurant restaurant) {
         log.info("create restaurant {}", restaurant);
         return restaurantRepository.save(restaurant);
     }
 
     @Transactional
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public void update(Restaurant restaurant, int id) {
         log.info("update restaurant {} with id={}", restaurant, id);
         Restaurant existing = restaurantRepository.getExisted(id);
@@ -58,11 +63,13 @@ public class RestaurantService {
     }
 
     @Transactional
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public void delete(int id) {
         log.info("delete restaurant {}", id);
         restaurantRepository.deleteExisted(id);
     }
 
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public void addMenu(int restaurantId, MenuTo menuTo) {
         log.info("add menu for restaurant {} on {}", restaurantId, menuTo.getDate());
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
@@ -82,6 +89,7 @@ public class RestaurantService {
         menuRepository.save(menu);
     }
 
+    @Cacheable(value = "menus_by_restaurant", key = "#restaurantId + '_' + #date.toString()")
     public Menu getMenuByRestaurantAndDate(int restaurantId, LocalDate date) {
         log.info("get menu for restaurant {} on {}", restaurantId, date);
         return menuRepository.getByRestaurantAndDate(restaurantId, date)

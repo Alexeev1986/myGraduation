@@ -2,6 +2,8 @@ package ru.alexeev.mygraduation.vote.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
@@ -34,9 +36,11 @@ public class VoteService {
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
     private final WinnerValidator winnerValidator;
+    private final VoteService self;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
 
+    @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
     @Transactional
     public Vote vote(int userId, int restaurantId) {
         log.info("vote: user {} votes for restaurant {}", userId, restaurantId);
@@ -85,9 +89,10 @@ public class VoteService {
     @Transactional(readOnly = true)
     public List<VoteResultTo> getTodayVoteResults() {
         log.info("get today results");
-        return getVoteResultsForDate(LocalDate.now(clock));
+        return self.getVoteResultsForDate(LocalDate.now(clock));
     }
 
+    @Cacheable(value = "vote_results", key = "#date.toString()")
     @Transactional(readOnly = true)
     public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
         log.info("get vote results for date {}", date);
@@ -95,6 +100,7 @@ public class VoteService {
         return convertToVoteResultTos(rawResults);
     }
 
+    @Cacheable(value = "today_winner", key = "#root.methodName")
     @Transactional(readOnly = true)
     public Optional<VoteResultTo> getTodayWinner() {
         List<VoteResultTo> result = getTodayVoteResults();
@@ -107,7 +113,7 @@ public class VoteService {
         Map<LocalDate, List<VoteResultTo>> results = new LinkedHashMap<>();
         LocalDate current = start;
         while (!current.isAfter(end)) {
-            results.put(current, getVoteResultsForDate(current));
+            results.put(current, self.getVoteResultsForDate(current));
             current = current.plusDays(1);
         }
         return results;
