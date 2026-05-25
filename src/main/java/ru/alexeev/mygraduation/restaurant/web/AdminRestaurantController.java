@@ -58,4 +58,18 @@ public class AdminRestaurantController {
         log.info("add menu for restaurant {} on {}", id, menuTo.getDate());
         restaurantService.addMenu(id, menuTo);
     }
+
+    @PutMapping(value = "/{restaurantId}/menus/{menuId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateMenu(@PathVariable int restaurantId, @PathVariable int menuId, @Valid @RequestBody MenuTo menuTo) {
+        log.info("update menu {} for restaurant {}", menuId, restaurantId);
+        restaurantService.updateMenu(restaurantId, menuId, menuTo);
+    }
+
+    @DeleteMapping("/{restaurantId}/menus/{menuId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMenu(@PathVariable int restaurantId, @PathVariable int menuId) {
+        log.info("delete menu {} for restaurant {}", menuId, restaurantId);
+        restaurantService.deleteMenu(restaurantId, menuId);
+    }
 }

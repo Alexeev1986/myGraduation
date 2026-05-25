@@ -7,16 +7,17 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.alexeev.mygraduation.common.error.DataConflictException;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
 import ru.alexeev.mygraduation.restaurant.model.MenuItem;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
 import ru.alexeev.mygraduation.restaurant.repository.DishRepository;
+import ru.alexeev.mygraduation.restaurant.repository.MenuItemRepository;
 import ru.alexeev.mygraduation.restaurant.repository.MenuRepository;
 import ru.alexeev.mygraduation.restaurant.repository.RestaurantRepository;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final MenuRepository menuRepository;
     private final DishRepository dishRepository;
+    private final MenuItemRepository menuItemRepository;
 
     public List<Restaurant> getAll() {
         log.info("getAll restaurants");
@@ -82,6 +84,22 @@ public class RestaurantService {
 
         Menu menu = menuRepository.save(new Menu(null, restaurant, date));
 
+        menuToToMenu(menuTo, menu);
+    }
+
+    @Transactional
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
+    public void updateMenu(int restaurantId, int menuId, MenuTo menuTo) {
+        log.info("update menu {} for restourant {}", menuId, restaurantId);
+        Menu menu = getMenuAndCheckBelonging(restaurantId, menuId);
+
+        menuValidator.validate(menuTo);
+        menu.getMenuItems().clear();
+
+        menuToToMenu(menuTo, menu);
+    }
+
+    private void menuToToMenu(MenuTo menuTo, Menu menu) {
         menuTo.getDishes().forEach(dishTo -> {
             Dish dish = dishRepository.findByNameIgnoreCaseAndPrice(dishTo.getName(), dishTo.getPrice())
                     .orElseGet(() -> dishRepository.save(new Dish(null, dishTo.getName(), dishTo.getPrice())));
@@ -89,6 +107,26 @@ public class RestaurantService {
             menu.getMenuItems().add(menuItem);
         });
         menuRepository.save(menu);
+    }
+
+    private Menu getMenuAndCheckBelonging(int restaurantId, int menuId) {
+        restaurantRepository.getExisted(restaurantId);
+        Menu menu = menuRepository.getExisted(menuId);
+        if (menu.getRestaurant().id() != restaurantId) {
+            throw new DataConflictException("Menu does not belong to restaurant");
+        }
+        return menu;
+    }
+
+    @Transactional
+    @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
+    public void deleteMenu(int restaurantId, int menuId) {
+        log.info("delete menu {} for restaurant {}", menuId, restaurantId);
+        Menu menu = getMenuAndCheckBelonging(restaurantId, menuId);
+
+        menuItemRepository.deleteByMenuId(menuId);
+
+        menuRepository.deleteExisted(menuId);
     }
 
     @Cacheable(value = "menus_by_restaurant", key = "#restaurantId + '_' + #date.toString()")
