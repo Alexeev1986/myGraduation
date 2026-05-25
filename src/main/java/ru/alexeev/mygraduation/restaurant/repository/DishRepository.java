@@ -10,6 +10,6 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public interface DishRepository extends BaseRepository<Dish> {
 
-    @Query("SELECT d FROM Dish d WHERE LOWER(d.name) = LOWER(:name)")
-    Optional<Dish> findByNameIgnoreCase(String name);
+    @Query("SELECT d FROM Dish d WHERE LOWER(d.name) = LOWER(:name) AND d.price=:price")
+    Optional<Dish> findByNameIgnoreCaseAndPrice(String name, Integer price);
 }

@@ -197,7 +197,7 @@ class RestaurantServiceTest {
     void getMenuByRestaurantAndDateNotFound() {
         LocalDate pastDate = LocalDate.of(2000, 1, 1);
         assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, pastDate))
-                .isInstanceOf(DataConflictException.class)
+                .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Menu not found");
     }
 

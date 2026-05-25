@@ -113,7 +113,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
         LocalDate oldDate = LocalDate.of(2000, 1, 1);
         perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu-by-date").param("date", oldDate.toString()))
                 .andDo(print())
-                .andExpect(status().isConflict());
+                .andExpect(status().isNotFound());
     }
 
     @Test

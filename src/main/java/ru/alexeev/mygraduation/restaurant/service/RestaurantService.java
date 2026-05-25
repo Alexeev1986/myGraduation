@@ -7,7 +7,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.alexeev.mygraduation.common.error.DataConflictException;
+import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
@@ -82,7 +82,7 @@ public class RestaurantService {
         Menu menu = menuRepository.save(new Menu(null, restaurant, date));
 
         menuTo.getDishes().forEach(dishTo -> {
-            Dish dish = dishRepository.findByNameIgnoreCase(dishTo.getName())
+            Dish dish = dishRepository.findByNameIgnoreCaseAndPrice(dishTo.getName(), dishTo.getPrice())
                     .orElseGet(() -> dishRepository.save(new Dish(null, dishTo.getName(), dishTo.getPrice())));
             menu.getDishes().add(dish);
         });
@@ -93,6 +93,6 @@ public class RestaurantService {
     public Menu getMenuByRestaurantAndDate(int restaurantId, LocalDate date) {
         log.info("get menu for restaurant {} on {}", restaurantId, date);
         return menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .orElseThrow(() -> new DataConflictException("Menu not found for restaurant " + restaurantId + " on " + date));
+                .orElseThrow(() -> new NotFoundException("Menu not found for restaurant " + restaurantId + " on " + date));
     }
 }

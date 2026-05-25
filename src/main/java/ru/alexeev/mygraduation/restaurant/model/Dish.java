@@ -12,7 +12,7 @@ import ru.alexeev.mygraduation.common.model.NamedEntity;
 
 @Entity
 @Table(name = "dish", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "name", name = "uk_dish_name")})
+        @UniqueConstraint(columnNames = {"name", "price"}, name = "uk_dish_name_price")})
 @Getter
 @Setter
 @NoArgsConstructor
