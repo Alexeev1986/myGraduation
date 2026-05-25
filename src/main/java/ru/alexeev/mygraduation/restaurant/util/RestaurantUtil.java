@@ -3,6 +3,7 @@ package ru.alexeev.mygraduation.restaurant.util;
 import lombok.experimental.UtilityClass;
 import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
+import ru.alexeev.mygraduation.restaurant.model.MenuItem;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
 import ru.alexeev.mygraduation.restaurant.to.DishTo;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
@@ -27,16 +28,16 @@ public class RestaurantUtil {
     }
 
     public static MenuTo toMenuTo(Menu menu) {
-        List<DishTo> dishTos = toDishTos(menu.getDishes());
+        List<DishTo> dishTos = menu.getMenuItems().stream()
+                .map(MenuItem::getDish)
+                .map(RestaurantUtil::toDishTo)
+                .toList();
         return new MenuTo(menu.getId(), menu.getDate(), dishTos);
     }
 
     public static Menu toMenu(MenuTo menuTo, Restaurant restaurant) {
         if (menuTo == null) return null;
-        Menu menu = new Menu(menuTo.getId(), restaurant, menuTo.getDate());
-        List<Dish> dishes = toDishes(menuTo.getDishes());
-        menu.setDishes(dishes);
-        return menu;
+        return new Menu(menuTo.getId(), restaurant, menuTo.getDate());
     }
 
     public static MenuTo newMenuTo(LocalDate date, List<Dish> dishes) {
