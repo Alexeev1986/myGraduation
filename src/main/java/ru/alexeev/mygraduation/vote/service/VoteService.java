@@ -76,37 +76,42 @@ public class VoteService {
 
     @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
     @Transactional
-    public Vote vote(int userId, int restaurantId) {
-        log.info("vote: user {} votes for restaurant {}", userId, restaurantId);
-
+    public Vote createVote(int userId, int restaurantId) {
+        log.info("create vote: user {} votes for restaurant {}", userId, restaurantId);
+        LocalDate today = LocalDate.now(clock);
+        Optional<Vote> existing = voteRepository.findByUserAndDate(userId, today);
+        if (existing.isPresent()) {
+            throw new DataConflictException("You have already voted today. Use update method to update your vore");
+        }
         User user = userRepository.getExisted(userId);
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
-        LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now(clock);
 
-        if (now.isAfter(DEADLINE)) {
-            throw new DataConflictException("Cannot vote or change vote after 11:00");
-        }
-
-        return voteRepository.findByUserAndDate(userId, today)
-                .map(existingVote -> updateExistingVote(existingVote, restaurant, now))
-                .orElseGet(() -> createNewVote(user, restaurant, today, now));
-    }
-
-    private Vote updateExistingVote(Vote existingVote, Restaurant restaurant, LocalTime now) {
-        if (now.isAfter(DEADLINE)) {
-            throw new DataConflictException("Cannot change vote after 11:00");
-        }
-        existingVote.setRestaurant(restaurant);
-        existingVote.setVoteTime(now);
-        log.info("Update vote {} to restaurant {}", existingVote.getId(), restaurant.getId());
-        return voteRepository.save(existingVote);
-    }
-
-    private Vote createNewVote(User user, Restaurant restaurant, LocalDate today, LocalTime now) {
         Vote vote = new Vote(null, user, restaurant, today, now);
         log.info("Created new vote from user {} to restaurant {}", user.getId(), restaurant.getId());
         return voteRepository.save(vote);
+    }
+
+    @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
+    @Transactional
+    public Vote updateVote(int userId, int voteId, int restaurantId) {
+        log.info("update vote: user {} votes for restaurant {}", userId, restaurantId);
+        Vote existingVote = voteRepository.getExisted(voteId);
+        if (existingVote.getUser().id() != userId) {
+            throw new DataConflictException("you can only update your own vote");
+        }
+
+        LocalTime now = LocalTime.now(clock);
+        if (now.isAfter(DEADLINE)) {
+            throw new DataConflictException("Cannot change vote after 11:00");
+        }
+
+        Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
+        existingVote.setRestaurant(restaurant);
+        existingVote.setVoteTime(now);
+
+        log.info("updated vote {} to restaurant {}", existingVote.getId(), restaurant.getId());
+        return voteRepository.save(existingVote);
     }
 
     public int getVotesCountForRestaurantToday(int restaurantId) {

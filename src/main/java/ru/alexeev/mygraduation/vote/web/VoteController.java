@@ -29,9 +29,17 @@ public class VoteController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public VoteTo vote(@AuthenticationPrincipal AuthUser authUser, @RequestParam @Min(1) int restaurantId) {
-        log.info("user {} votes for restaurant {}", authUser.id(), restaurantId);
-        Vote vote = voteService.vote(authUser.id(), restaurantId);
+    public VoteTo createVote(@AuthenticationPrincipal AuthUser authUser, @RequestParam @Min(1) int restaurantId) {
+        log.info("user {} create votes for restaurant {}", authUser.id(), restaurantId);
+        Vote vote = voteService.createVote(authUser.id(), restaurantId);
+        return toVoteTo(vote);
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public VoteTo updateVote(@AuthenticationPrincipal AuthUser authUser, @PathVariable int id, @RequestParam @Min(1) int restaurantId) {
+        log.info("user {} updates vote {} to restaurant {}", authUser, id, restaurantId);
+        Vote vote = voteService.updateVote(authUser.id(), id, restaurantId);
         return toVoteTo(vote);
     }
 
