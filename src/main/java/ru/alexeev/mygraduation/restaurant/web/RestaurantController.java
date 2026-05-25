@@ -41,14 +41,14 @@ public class RestaurantController {
         return toRestaurantTo(restaurant);
     }
 
-    @GetMapping("/{id}/menu")
+    @GetMapping("/{id}/menus/today")
     public MenuTo getTodayMenu(@PathVariable int id) {
         log.info("get today menu for restaurant {}", id);
         Menu menu = restaurantService.getMenuByRestaurantAndDate(id, LocalDate.now());
         return toMenuTo(menu);
     }
 
-    @GetMapping("/{id}/menu-by-date")
+    @GetMapping("/{id}/menus/by-date")
     public MenuTo getMenuByDate(@PathVariable int id,
                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         log.info("get menu for restaurant {} on {}", id, date);
