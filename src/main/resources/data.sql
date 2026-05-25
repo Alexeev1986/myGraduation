@@ -28,10 +28,10 @@ INSERT INTO menu (restaurant_id, date) VALUES
     (1, CURRENT_DATE), (2, CURRENT_DATE), (3, CURRENT_DATE);
 
 
-INSERT INTO menu_dish (menu_id, dish_id) VALUES
-    (1, 1), (1, 2), (1, 4), (1, 5),
-    (2, 6), (2, 8), (2, 9), (2, 10),
-    (3, 11), (3, 12), (3, 13), (3, 14);
+INSERT INTO menu_item (menu_id, dish_id) VALUES
+     (1, 1), (1, 2), (1, 4), (1, 5),
+     (2, 6), (2, 8), (2, 9), (2, 10),
+     (3, 11), (3, 12), (3, 13), (3, 14);
 
 
 INSERT INTO vote (user_id, restaurant_id, vote_date, vote_time) VALUES
