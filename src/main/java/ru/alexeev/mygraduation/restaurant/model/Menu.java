@@ -30,11 +30,8 @@ public class Menu extends BaseEntity {
     @NotNull
     private LocalDate date;
 
-    @ManyToMany
-    @JoinTable(name = "menu_dish", joinColumns = @JoinColumn(name = "menu_id"),
-            inverseJoinColumns = @JoinColumn(name = "dish_id"))
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private List<Dish> dishes = new ArrayList<>();
+    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MenuItem> menuItems = new ArrayList<>();
 
     public Menu(Integer id, Restaurant restaurant, LocalDate date) {
         super(id);
