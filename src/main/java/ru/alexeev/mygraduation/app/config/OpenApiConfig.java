@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
                         - user@yandex.ru / password (USER)<br>
                         - admin@gmail.com / admin (ADMIN)</p>
                         """,
-                contact = @Contact(name = "Alexeev Anton", email = "gonza_ant@mail.ru",url = "https://github.com")),
+                contact = @Contact(name = "Alexeev Anton", email = "gonza_ant@mail.ru",url = "https://github.com/Alexeev1986")),
         security = @SecurityRequirement(name = "basicAuth")
 )
 public class OpenApiConfig {
