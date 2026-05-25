@@ -125,82 +125,53 @@ curl -X GET "http://localhost:8080/api/votes/results/today" -u user@yandex.ru:pa
 ````
 # 4. Создать ресторан (только ADMIN)
 ```bash
-curl -X POST "http://localhost:8080/api/admin/restaurants" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Новый ресторан"}' \
-  -u admin@gmail.com:admin
+curl -X POST "http://localhost:8080/api/admin/restaurants" -H "Content-Type: application/json" -d "{\"name\":\"Новый ресторан\"}" -u admin@gmail.com:admin
 ````
 # 5. Добавить меню (только ADMIN)
 ```bash
-curl -X POST "http://localhost:8080/api/admin/restaurants/1/menu" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "date": "2026-05-09",
-    "dishes": [
-      {"name": "Ролл Филадельфия", "price": 550},
-      {"name": "Ролл Калифорния", "price": 480}
-    ]
-  }' \
-  -u admin@gmail.com:admin
+curl -X POST "http://localhost:8080/api/admin/restaurants/1/menu" -H "Content-Type: application/json" -d "{\"date\":\"2026-05-09\",\"dishes\":[{\"name\":\"Ролл Филадельфия\",\"price\":550},{\"name\":\"Ролл Калифорния\",\"price\":480}]}" -u admin@gmail.com:admin
 ````
 # 6. Зарегистрировать нового пользователя
 ```bash
-curl -X POST "http://localhost:8080/api/profile" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Новый пользователь",
-    "email": "newuser@mail.ru",
-    "password": "password"
-  }'
+curl -X POST "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новый пользователь\",\"email\":\"newuser@mail.ru\",\"password\":\"password\"}" -u admin@gmail.com:admin
 ````
 # 7. Получить свой профиль
 ```bash
 curl -X GET "http://localhost:8080/api/profile" -u user@yandex.ru:password
-
+````
 # 8. Получить статистику голосования (только ADMIN)
+```bash
 curl -X GET "http://localhost:8080/api/admin/votes/stats" -u admin@gmail.com:admin
-```
-# 8. Получить всех пользователей (только ADMIN)
+````
+# 9. Получить всех пользователей (только ADMIN)
 ```bash
 curl -X GET "http://localhost:8080/api/admin/users" -u admin@gmail.com:admin
 ````
-# 9. Заблокировать пользователя (только ADMIN)
+# 10. Заблокировать пользователя (только ADMIN)
 ```bash
-curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" \
--H "Content-Type: application/json" \
--u admin@gmail.com:admin
+curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" -H "Content-Type: application/json" -u admin@gmail.com:admin
 ````
-# 10. Получить результаты за конкретную дату (только ADMIN)
+# 11. Получить результаты за конкретную дату (только ADMIN)
 ```bash
 curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-07" -u admin@gmail.com:admin
 ````
-# 11. Получить историю голосов пользователя (только ADMIN)
+# 12. Получить историю голосов пользователя (только ADMIN)
 ```bash
 curl -X GET "http://localhost:8080/api/admin/users/2/votes" -u admin@gmail.com:admin
 ````
-# 12. Обновить свой профиль
+# 13. Обновить свой профиль
 ```bash
-curl -X PUT "http://localhost:8080/api/profile" \
--H "Content-Type: application/json" \
--d '{
-"name": "Новое имя",
-"email": "user@yandex.ru",
-"password": "newpassword"
-}' \
--u user@yandex.ru:password
+curl.exe -X PUT "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новое имя\",\"email\":\"user@yandex.ru\",\"password\":\"newpassword\",\"enabled\":true,\"roles\":[\"USER\"]}" -u user@yandex.ru:password
 ````
-# 13. Удалить ресторан (только ADMIN)
+# 14. Удалить ресторан (только ADMIN)
 ```bash
 curl -X DELETE "http://localhost:8080/api/admin/restaurants/1" -u admin@gmail.com:admin
 ````
-# 14. Обновить ресторан (только ADMIN)
+# 15. Обновить ресторан (только ADMIN)
 ```bash
-curl -X PUT "http://localhost:8080/api/admin/restaurants/1" \
--H "Content-Type: application/json" \
--d '{"id":1,"name":"Обновленная Япошка"}' \
--u admin@gmail.com:admin
+curl -X PUT "http://localhost:8080/api/admin/restaurants/1" -H "Content-Type: application/json" -d "{\"id\":1,\"name\":\"Обновленная Япошка\"}" -u admin@gmail.com:admin
 ````
-# 15. Получить победителя голосования
+# 16. Получить победителя голосования
 ```bash
 curl -X GET "http://localhost:8080/api/votes/results/winner" -u user@yandex.ru:password
 ````
