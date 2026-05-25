@@ -1,5 +1,6 @@
 package ru.alexeev.mygraduation.restaurant.to;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -14,9 +15,10 @@ import java.util.List;
 @Value
 public class MenuTo extends BaseTo {
     @NotNull
+    @FutureOrPresent(message = "date must be today or in the future")
     LocalDate date;
 
-    @NotEmpty
+    @NotEmpty(message = "menu must contain at least one dish")
     List<DishTo> dishes;
 
     public MenuTo(Integer id, LocalDate date, List<DishTo> dishes) {
