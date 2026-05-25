@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
+import ru.alexeev.mygraduation.restaurant.model.MenuItem;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
 import ru.alexeev.mygraduation.restaurant.repository.DishRepository;
 import ru.alexeev.mygraduation.restaurant.repository.MenuRepository;
@@ -84,7 +85,8 @@ public class RestaurantService {
         menuTo.getDishes().forEach(dishTo -> {
             Dish dish = dishRepository.findByNameIgnoreCaseAndPrice(dishTo.getName(), dishTo.getPrice())
                     .orElseGet(() -> dishRepository.save(new Dish(null, dishTo.getName(), dishTo.getPrice())));
-            menu.getDishes().add(dish);
+            MenuItem menuItem = new MenuItem(null, menu, dish);
+            menu.getMenuItems().add(menuItem);
         });
         menuRepository.save(menu);
     }
