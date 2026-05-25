@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
@@ -20,6 +21,7 @@ import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.*;
 @RequestMapping(value = RestaurantController.REST_URL, produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class RestaurantController {
     static final String REST_URL = "/api/restaurants";
 
