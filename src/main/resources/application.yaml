@@ -17,7 +17,7 @@ spring:
 
   cache:
     type: caffeine
-    cache-names: restaurants_with_menu, menus_by_restaurant, vote_results, today_winner
+    cache-names: restaurant_with_menu, menus_by_restaurant, vote_results, today_winner
     caffeine:
       spec: maximumSize=100, expireAfterWrite=1h
 
@@ -31,6 +31,7 @@ logging:
   level:
     root: WARN
     ru.alexeev.mygraduation: DEBUG
+    org.springframework.cache: DEBUG
     org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver: DEBUG
 
 springdoc.swagger-ui.path: /
