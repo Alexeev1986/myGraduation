@@ -52,7 +52,7 @@ public class AdminRestaurantController {
         restaurantService.delete(id);
     }
 
-    @PostMapping(value = "/{id}/menu", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{id}/menus", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public void addMenu(@PathVariable int id, @Valid @RequestBody MenuTo menuTo) {
         log.info("add menu for restaurant {} on {}", id, menuTo.getDate());
