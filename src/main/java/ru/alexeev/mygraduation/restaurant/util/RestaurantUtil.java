@@ -63,4 +63,10 @@ public class RestaurantUtil {
                 .map(RestaurantUtil::toDishTo)
                 .toList();
     }
+
+    public static List<Dish> createdDishFromMenuItem(List<MenuItem> menuItems) {
+        return menuItems.stream()
+                .map(MenuItem::getDish)
+                .toList();
+    }
 }
