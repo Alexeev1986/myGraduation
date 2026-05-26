@@ -16,7 +16,11 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "vote", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "vote_date"}, name = "uk_vote_user_date")})
+        @UniqueConstraint(columnNames = {"user_id", "vote_date"}, name = "uk_vote_user_date")},
+        indexes = {
+            @Index(name = "idx_vote_restaurant_date", columnList = "restaurant_id, vote_date"),
+            @Index(name = "idx_vote_date", columnList = "vote_date")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
