@@ -12,6 +12,14 @@
 
 В приложении реализованы следующие возможности: просмотр ресторанов с сегодняшним меню, голосование, просмотр результатов голосования за сегодня, определение победителя, а также административные функции: управление ресторанами, меню, пользователями и статистика голосования за любые даты.
 
+## Документация API
+
+После запуска приложения Swagger UI доступен по адресу:
+
+```bash
+http://localhost:8080/swagger-ui/index.html
+````
+
 ## Технологии
 
 - Java 21
@@ -54,21 +62,23 @@ mvn spring-boot:run
 
 ### Рестораны (доступно USER и ADMIN)
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | /api/restaurants | Список ресторанов с сегодняшним меню |
-| GET | /api/restaurants/{id} | Ресторан по ID |
-| GET | /api/restaurants/{id}/menu | Сегодняшнее меню ресторана |
-| GET | /api/restaurants/{id}/menu-by-date | Меню по дате (параметр date) |
+| Метод | URL                                 | Описание                             |
+|-------|-------------------------------------|--------------------------------------|
+| GET | /api/restaurants                    | Список ресторанов с сегодняшним меню   |
+| GET | /api/restaurants/{id}               | Ресторан по ID                         |
+| GET | /api/restaurants/{id}/menus/today   | Сегодняшнее меню ресторана             |
+| GET | /api/restaurants/{id}/menus/by-date | Меню по дате (параметр date)           |
 
 ### Управление ресторанами (только ADMIN)
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| POST | /api/admin/restaurants | Создать ресторан |
-| PUT | /api/admin/restaurants/{id} | Обновить ресторан |
-| DELETE | /api/admin/restaurants/{id} | Удалить ресторан |
-| POST | /api/admin/restaurants/{id}/menu | Добавить меню |
+| Метод  | URL                                        | Описание          |
+|--------|--------------------------------------------|-------------------|
+| POST   | /api/admin/restaurants                     | Создать ресторан  |
+| PUT    | /api/admin/restaurants/{id}                | Обновить ресторан |
+| DELETE | /api/admin/restaurants/{id}                | Удалить ресторан  |
+| POST   | /api/admin/restaurants/{id}/menus          | Добавить меню     |
+| PUT    | /api/admin/restaurants/{id}/menus/{menuId} | Обновить меню     |
+| DELETE | /api/admin/restaurants/{id}/menus/{menuId} | Удалить меню      |
 
 ### Голосование (доступно USER)
 
@@ -111,76 +121,97 @@ mvn spring-boot:run
 ## Примеры curl команд
 
 
-# 1. Получить список ресторанов
+# 1. Получить список ресторанов с сегодняшним меню
 ```bash
 curl -X GET "http://localhost:8080/api/restaurants" -u user@yandex.ru:password
-````
-# 2. Проголосовать за ресторан
+```
+# 2. Получить ресторан по ID
+```bash
+curl -X GET "http://localhost:8080/api/restaurants/1" -u user@yandex.ru:password
+```
+# 3. Получить сегодняшнее меню ресторана
+```bash
+curl -X GET "http://localhost:8080/api/restaurants/1/menus/today" -u user@yandex.ru:password
+```
+# 4. Получить меню по дате
+```bash
+curl -X GET "http://localhost:8080/api/restaurants/1/menus/by-date?date=2026-05-31" -u user@yandex.ru:password
+```
+# 5. Создать голос
 ```bash
 curl -X POST "http://localhost:8080/api/votes?restaurantId=1" -u user@yandex.ru:password
-````
-# 3. Получить результаты голосования
+```
+# 6. Изменить голос (только до 11:00)
+```bash
+curl -X PUT "http://localhost:8080/api/votes/1?restaurantId=2" -u user@yandex.ru:password
+```
+# 7. Получить результаты голосования за сегодня
 ```bash
 curl -X GET "http://localhost:8080/api/votes/results/today" -u user@yandex.ru:password
-````
-# 4. Создать ресторан (только ADMIN)
-```bash
-curl -X POST "http://localhost:8080/api/admin/restaurants" -H "Content-Type: application/json" -d "{\"name\":\"Новый ресторан\"}" -u admin@gmail.com:admin
-````
-# 5. Добавить меню (только ADMIN)
-```bash
-curl -X POST "http://localhost:8080/api/admin/restaurants/1/menu" -H "Content-Type: application/json" -d "{\"date\":\"2026-05-09\",\"dishes\":[{\"name\":\"Ролл Филадельфия\",\"price\":550},{\"name\":\"Ролл Калифорния\",\"price\":480}]}" -u admin@gmail.com:admin
-````
-# 6. Зарегистрировать нового пользователя
-```bash
-curl -X POST "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новый пользователь\",\"email\":\"newuser@mail.ru\",\"password\":\"password\"}" -u admin@gmail.com:admin
-````
-# 7. Получить свой профиль
-```bash
-curl -X GET "http://localhost:8080/api/profile" -u user@yandex.ru:password
-````
-# 8. Получить статистику голосования (только ADMIN)
-```bash
-curl -X GET "http://localhost:8080/api/admin/votes/stats" -u admin@gmail.com:admin
-````
-# 9. Получить всех пользователей (только ADMIN)
-```bash
-curl -X GET "http://localhost:8080/api/admin/users" -u admin@gmail.com:admin
-````
-# 10. Заблокировать пользователя (только ADMIN)
-```bash
-curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" -H "Content-Type: application/json" -u admin@gmail.com:admin
-````
-# 11. Получить результаты за конкретную дату (только ADMIN)
-```bash
-curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-07" -u admin@gmail.com:admin
-````
-# 12. Получить историю голосов пользователя (только ADMIN)
-```bash
-curl -X GET "http://localhost:8080/api/admin/users/2/votes" -u admin@gmail.com:admin
-````
-# 13. Обновить свой профиль
-```bash
-curl.exe -X PUT "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новое имя\",\"email\":\"user@yandex.ru\",\"password\":\"newpassword\",\"enabled\":true,\"roles\":[\"USER\"]}" -u user@yandex.ru:password
-````
-# 14. Удалить ресторан (только ADMIN)
-```bash
-curl -X DELETE "http://localhost:8080/api/admin/restaurants/1" -u admin@gmail.com:admin
-````
-# 15. Обновить ресторан (только ADMIN)
-```bash
-curl -X PUT "http://localhost:8080/api/admin/restaurants/1" -H "Content-Type: application/json" -d "{\"id\":1,\"name\":\"Обновленная Япошка\"}" -u admin@gmail.com:admin
-````
-# 16. Получить победителя голосования
+```
+# 8. Получить победителя голосования
 ```bash
 curl -X GET "http://localhost:8080/api/votes/results/winner" -u user@yandex.ru:password
-````
-## Swagger документация
-
-После запуска приложения Swagger UI доступен по адресу:
-
+```
+# 9. Создать ресторан (ADMIN)
 ```bash
-http://localhost:8080/swagger-ui/index.html
+curl -X POST "http://localhost:8080/api/admin/restaurants" -H "Content-Type: application/json" -d "{\"name\":\"Новый ресторан\"}" -u admin@gmail.com:admin
+```
+# 10. Добавить меню (ADMIN)
+```bash
+curl -X POST "http://localhost:8080/api/admin/restaurants/1/menus" -H "Content-Type: application/json" -d "{\"date\":\"2026-05-31\",\"dishes\":[{\"name\":\"Ролл Филадельфия\",\"price\":550},{\"name\":\"Ролл Калифорния\",\"price\":480}]}" -u admin@gmail.com:admin
+```
+# 11. Обновить меню (ADMIN)
+```bash
+curl -X PUT "http://localhost:8080/api/admin/restaurants/1/menus/4" -H "Content-Type: application/json" -d "{\"date\":\"2026-05-31\",\"dishes\":[{\"name\":\"Вареники с картошкой\",\"price\":400},{\"name\":\"Компот\",\"price\":80}]}" -u admin@gmail.com:admin
+```
+# 12. Удалить меню (ADMIN)
+```bash
+curl -X DELETE "http://localhost:8080/api/admin/restaurants/1/menus/4" -u admin@gmail.com:admin
+```
+# 13. Обновить ресторан (ADMIN)
+```bash
+curl -X PUT "http://localhost:8080/api/admin/restaurants/1" -H "Content-Type: application/json" -d "{\"id\":1,\"name\":\"Обновленная Япошка\"}" -u admin@gmail.com:admin
+```
+# 14. Удалить ресторан (ADMIN)
+```bash
+curl -X DELETE "http://localhost:8080/api/admin/restaurants/1" -u admin@gmail.com:admin
+```
+# 15. Зарегистрировать нового пользователя
+```bash
+curl -X POST "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новый пользователь\",\"email\":\"newuser@mail.ru\",\"password\":\"password\"}" -u admin@gmail.com:admin
+```
+# 16. Получить свой профиль
+```bash
+curl -X GET "http://localhost:8080/api/profile" -u user@yandex.ru:password
+```
+# 17. Обновить свой профиль
+```bash
+curl -X PUT "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новое имя\",\"email\":\"user@yandex.ru\",\"password\":\"newpassword\",\"enabled\":true,\"roles\":[\"USER\"]}" -u user@yandex.ru:password
+```
+# 18. Получить всех пользователей (ADMIN)
+```bash
+curl -X GET "http://localhost:8080/api/admin/users" -u admin@gmail.com:admin
+```
+# 19. Получить историю голосов пользователя (ADMIN)
+```bash
+curl -X GET "http://localhost:8080/api/admin/users/2/votes" -u admin@gmail.com:admin
+```
+# 20. Заблокировать пользователя (ADMIN)
+```bash
+curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" -H "Content-Type: application/json" -u admin@gmail.com:admin
+```
+# 21. Получить результаты за конкретную дату (ADMIN)
+```bash
+curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-07" -u admin@gmail.com:admin
+```
+# 22. Получить результаты за период (ADMIN)
+```bash
+curl -X GET "http://localhost:8080/api/admin/votes/results/range?start=2026-05-01&end=2026-05-31" -u admin@gmail.com:admin
+```
+# 23. Получить статистику голосования (ADMIN)
+```bash
+curl -X GET "http://localhost:8080/api/admin/votes/stats" -u admin@gmail.com:admin
 ````
 
 ## HTTP статусы ответов
