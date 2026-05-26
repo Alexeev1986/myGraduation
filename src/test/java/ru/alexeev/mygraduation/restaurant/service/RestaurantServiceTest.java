@@ -4,9 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import ru.alexeev.mygraduation.AbstractServiceTest;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
 import ru.alexeev.mygraduation.common.error.IllegalRequestDataException;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
@@ -22,13 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.*;
-import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.newMenuTo;
-import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.toDishTos;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.*;
 
-@SpringBootTest
-@Transactional
-@ActiveProfiles("test")
-class RestaurantServiceTest {
+class RestaurantServiceTest extends AbstractServiceTest {
 
     @Autowired
     private RestaurantService restaurantService;
@@ -99,9 +93,10 @@ class RestaurantServiceTest {
         MenuTo menuTo = new MenuTo(null, TOMORROW, dishes);
         restaurantService.addMenu(RESTAURANT1_ID, menuTo);
         Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW);
+        // ПЕРЕДЕЛАТЬ на МАТЧЕР!
         assertThat(menu).isNotNull();
-        assertThat(menu.getDishes()).hasSize(2);
-        assertThat(menu.getDishes()).extracting("name").containsExactlyInAnyOrder("Роллы", "Суши");
+        assertThat(menu.getMenuItems()).hasSize(2);
+        assertThat(menu.getMenuItems()).extracting(mi -> mi.getDish().getName()).containsExactlyInAnyOrder("Роллы", "Суши");
     }
 
 
@@ -122,23 +117,21 @@ class RestaurantServiceTest {
             Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, date);
             assertThat(created).isNotNull();
             assertThat(created.getDate()).isEqualTo(date);
-            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+            List<Dish> actualItems = createdDishFromMenuItem(created.getMenuItems());
+            DISH_MATCHER.assertMatch(actualItems, dishes);
         } else {
             assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
                     .isInstanceOf(DataConflictException.class)
-                    .hasMessageContaining("Cannot add menu for past date");
+                    .hasMessageContaining("cannot add menu for past date");
         }
     }
 
     @ParameterizedTest
     @CsvSource({
             "0, false",
-            "1, false",
+            "1, true",
             "2, true",
-            "3, true",
-            "4, true",
-            "5, true",
-            "6, false"
+            "10, true"
     })
     void addMenuWithDifferentDishCounts(int dishCount, boolean shouldSucceed) {
         List<Dish> dishes = new ArrayList<>();
@@ -151,11 +144,12 @@ class RestaurantServiceTest {
         if (shouldSucceed) {
             restaurantService.addMenu(RESTAURANT1_ID, menuTo);
             Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
-            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+            List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+            DISH_MATCHER.assertMatch(actualDishes, dishes);
         } else {
             assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
                     .isInstanceOf(IllegalRequestDataException.class)
-                    .hasMessageContaining("Menu must contain between 2 and 5 dishes");
+                    .hasMessageContaining("menu must contain at least one dish");
         }
     }
 
@@ -168,7 +162,7 @@ class RestaurantServiceTest {
         restaurantService.addMenu(RESTAURANT1_ID, new MenuTo(null, TOMORROW, dishes1));
 
         Menu firstMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW);
-        List<Dish> expectedDishes = firstMenu.getDishes();
+        List<Dish> expectedDishes = createdDishFromMenuItem(firstMenu.getMenuItems());
 
         List<DishTo> dishes2 = List.of(
                 new DishTo(null, "Роллы", 500),
@@ -177,7 +171,7 @@ class RestaurantServiceTest {
         restaurantService.addMenu(RESTAURANT1_ID, new MenuTo(null, TOMORROW.plusDays(1), dishes2));
 
         Menu secondMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW.plusDays(1));
-        List<Dish> actualDishes = secondMenu.getDishes();
+        List<Dish> actualDishes = createdDishFromMenuItem(secondMenu.getMenuItems());
 
         DISH_WITH_ID_MATCHER.assertMatch(actualDishes, expectedDishes);
     }
@@ -198,7 +192,7 @@ class RestaurantServiceTest {
         LocalDate pastDate = LocalDate.of(2000, 1, 1);
         assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, pastDate))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("Menu not found");
+                .hasMessageContaining("menu not found");
     }
 
     @Test
@@ -215,6 +209,47 @@ class RestaurantServiceTest {
         assertThat(menu).isNotNull();
         assertThat(menu.getRestaurant().getId()).isEqualTo(RESTAURANT1_ID);
         assertThat(menu.getDate()).isEqualTo(TOMORROW);
-        assertThat(menu.getDishes()).hasSize(2);
+        assertThat(menu.getMenuItems()).hasSize(2);
+    }
+
+    @Test
+    void updateMenu() {
+        Menu beforeUpdate = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        assertThat(beforeUpdate).isNotNull();
+        assertThat(beforeUpdate.getMenuItems()).hasSize(4);
+
+        List<DishTo> updatedDishes = getUpdatedDishesTo();
+
+        MenuTo updatedMenuTo = new MenuTo(beforeUpdate.getId(), TODAY, updatedDishes);
+        restaurantService.updateMenu(RESTAURANT1_ID, beforeUpdate.id(), updatedMenuTo);
+
+        Menu afterUpdate = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        assertThat(afterUpdate.getMenuItems()).hasSize(3);
+
+        List<Dish> actualDishes = createdDishFromMenuItem(afterUpdate.getMenuItems());
+        List<Dish> expectedDishes = List.of(dish6, dish10, dish13);
+        DISH_MATCHER.assertMatch(actualDishes, expectedDishes);
+    }
+
+    @Test
+    void deleteMenu() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        assertThat(menu).isNotNull();
+
+        restaurantService.deleteMenu(RESTAURANT1_ID, menu.id());
+
+        assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("menu not found");
+    }
+
+    @Test
+    void deleteMenuWrongRestaurant() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        assertThat(menu).isNotNull();
+
+        assertThatThrownBy(() -> restaurantService.deleteMenu(RESTAURANT2_ID, menu.id()))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("menu does not belong to restaurant");
     }
 }

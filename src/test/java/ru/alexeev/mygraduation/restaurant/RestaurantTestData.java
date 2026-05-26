@@ -3,7 +3,9 @@ package ru.alexeev.mygraduation.restaurant;
 import ru.alexeev.mygraduation.MatcherFactory;
 import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
+import ru.alexeev.mygraduation.restaurant.model.MenuItem;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
+import ru.alexeev.mygraduation.restaurant.to.DishTo;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
 import ru.alexeev.mygraduation.restaurant.to.RestaurantTo;
 
@@ -11,6 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.newMenuTo;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.toDishTo;
 
 public class RestaurantTestData {
     public static final MatcherFactory.Matcher<Restaurant> RESTAURANT_MATCHER =
@@ -22,13 +25,20 @@ public class RestaurantTestData {
     public static final MatcherFactory.Matcher<MenuTo> MENU_TO_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(MenuTo.class);
 
+    public static final MatcherFactory.Matcher<Menu> MENU_MATCHER =
+            MatcherFactory.usingIgnoringFieldsComparator(Menu.class);
+
     public static final MatcherFactory.Matcher<Dish> DISH_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Dish.class, "id");
 
     public static final MatcherFactory.Matcher<Dish> DISH_WITH_ID_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Dish.class);
 
+    public static final MatcherFactory.Matcher<MenuItem> MENU_ITEM_MATCHER =
+            MatcherFactory.usingIgnoringFieldsComparator(MenuItem.class, "id", "menu");
+
     public static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
+    public static final LocalDate TODAY = LocalDate.now();
 
     public static final int RESTAURANT1_ID = 1;
     public static final int RESTAURANT2_ID = 2;
@@ -60,9 +70,23 @@ public class RestaurantTestData {
     public static final Menu menu3 = new Menu(3, restaurant3, LocalDate.now());
 
     static {
-        menu1.setDishes(List.of(dish1, dish2, dish4, dish5));
-        menu2.setDishes(List.of(dish6, dish8, dish9, dish10));
-        menu3.setDishes(List.of(dish11, dish12, dish13, dish14));
+        MenuItem mi1 = new MenuItem(1, menu1, dish1);
+        MenuItem mi2 = new MenuItem(2, menu1, dish2);
+        MenuItem mi3 = new MenuItem(3, menu1, dish4);
+        MenuItem mi4 = new MenuItem(4, menu1, dish5);
+        menu1.setMenuItems(List.of(mi1, mi2, mi3, mi4));
+
+        MenuItem mi5 = new MenuItem(5, menu2, dish6);
+        MenuItem mi6 = new MenuItem(6, menu2, dish8);
+        MenuItem mi7 = new MenuItem(7, menu2, dish9);
+        MenuItem mi8 = new MenuItem(8, menu2, dish10);
+        menu2.setMenuItems(List.of(mi5, mi6, mi7, mi8));
+
+        MenuItem mi9 = new MenuItem(9, menu3, dish11);
+        MenuItem mi10 = new MenuItem(10, menu3, dish12);
+        MenuItem mi11 = new MenuItem(11, menu3, dish13);
+        MenuItem mi12 = new MenuItem(12, menu3, dish14);
+        menu3.setMenuItems(List.of(mi9, mi10, mi11, mi12));
 
         restaurant1.setMenus(List.of(menu1));
         restaurant2.setMenus(List.of(menu2));
@@ -99,5 +123,9 @@ public class RestaurantTestData {
 
     public static MenuTo getMenuWithEmptyDishes() {
         return new MenuTo(null, TOMORROW, List.of());
+    }
+
+    public static List<DishTo> getUpdatedDishesTo() {
+        return List.of(toDishTo(dish6), toDishTo(dish10), toDishTo(dish13));
     }
 }
