@@ -1,3 +1,18 @@
+DELETE FROM menu_item;
+DELETE FROM menu;
+DELETE FROM restaurant;
+DELETE FROM vote;
+DELETE FROM user_role;
+DELETE FROM users;
+DELETE FROM dish;
+
+ALTER TABLE menu_item ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE menu ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE restaurant ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE vote ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE users ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE dish ALTER COLUMN id RESTART WITH 1;
+
 INSERT INTO users (name, email, password, enabled, registered) VALUES
     ('Admin', 'admin@gmail.com', '{noop}admin', true, now()),
     ('User', 'user@yandex.ru', '{noop}password', true, now()),
