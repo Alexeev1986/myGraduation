@@ -14,11 +14,13 @@ import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.to.UserTo;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.service.VoteService;
+import ru.alexeev.mygraduation.vote.to.ProfileVoteTo;
 
 import java.net.URI;
 import java.util.List;
 
 import static ru.alexeev.mygraduation.common.validation.ValidationUtil.assureIdConsistent;
+import static ru.alexeev.mygraduation.vote.util.VoteUtil.voteToProfileVoteTo;
 
 @RestController
 @RequestMapping(value = ProfileController.REST_URL, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -35,10 +37,12 @@ public class ProfileController extends AbstractUserController{
     }
 
     @GetMapping("/votes")
-    public List<Vote> getMyVotes(@AuthenticationPrincipal AuthUser authUser) {
+    public List<ProfileVoteTo> getMyVotes(@AuthenticationPrincipal AuthUser authUser) {
         log.info("get my votes for user {}", authUser.id());
-        return voteService.findByUser(authUser.id());
+        List<Vote> votes = voteService.findByUser(authUser.id());
+        return voteToProfileVoteTo(votes);
     }
+
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)

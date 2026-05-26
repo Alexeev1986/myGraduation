@@ -2,6 +2,7 @@ package ru.alexeev.mygraduation.vote.util;
 
 import lombok.experimental.UtilityClass;
 import ru.alexeev.mygraduation.vote.model.Vote;
+import ru.alexeev.mygraduation.vote.to.ProfileVoteTo;
 import ru.alexeev.mygraduation.vote.to.VoteTo;
 
 import java.util.List;
@@ -26,5 +27,16 @@ public class VoteUtil {
         return votes.stream()
                 .map(VoteUtil::toVoteTo)
                 .toList();
+    }
+
+    public static List<ProfileVoteTo> voteToProfileVoteTo(List<Vote> votes) {
+        return votes.stream()
+                .map(v -> new ProfileVoteTo(
+                        v.getId(),
+                        v.getRestaurant().id(),
+                        v.getRestaurant().getName(),
+                        v.getVoteDate(),
+                        v.getVoteTime()
+                )).toList();
     }
 }
