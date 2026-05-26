@@ -14,13 +14,13 @@ import static ru.alexeev.mygraduation.vote.VoteTestData.YESTERDAY_EXPECTED_RESUL
 import static ru.alexeev.mygraduation.vote.VoteTestData.twoDaysAgoResultForRestaurant1;
 import static ru.alexeev.mygraduation.vote.WinnerValidatorTestData.*;
 
-public class WinnerValidatorTest {
+public class WinnerDeterminerTest {
 
-    private final WinnerValidator winnerValidator = new WinnerValidator();
+    private final WinnerDeterminer winnerDeterminer = new WinnerDeterminer();
 
     @Test
     void determineWinner_WithOneWinner() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(WINNER_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(WINNER_SCENARIO_RESULTS);
 
         assertThat(winner).isPresent();
         assertThat(winner.get().getRestaurantId()).isEqualTo(RESTAURANT1_ID);
@@ -29,21 +29,21 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithDrawBetweenTwo() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(DRAW_TWO_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(DRAW_TWO_SCENARIO_RESULTS);
 
         assertThat(winner).isEmpty();
     }
 
     @Test
     void determineWinner_WithDrawBetweenThree() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(DRAW_ALL_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(DRAW_ALL_SCENARIO_RESULTS);
 
         assertThat(winner).isEmpty();
     }
 
     @Test
     void determineWinner_WithNotVotes() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(NO_VOTES_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(NO_VOTES_SCENARIO_RESULTS);
 
         assertThat(winner).isEmpty();
     }
@@ -51,14 +51,14 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithResultsIsNull() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(null);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(null);
 
         assertThat(winner).isEmpty();
     }
 
     @Test
     void determineWinner_WithSingleRestaurant() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(SINGLE_WINNER_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(SINGLE_WINNER_SCENARIO_RESULTS);
 
         assertThat(winner).isPresent();
         assertThat(winner.get().getRestaurantId()).isEqualTo(RESTAURANT1_ID);
@@ -67,7 +67,7 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithWinnerHasMoreVotes() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(BIG_WINNER_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(BIG_WINNER_SCENARIO_RESULTS);
 
         assertThat(winner).isPresent();
         assertThat(winner.get().getRestaurantId()).isEqualTo(RESTAURANT2_ID);
@@ -76,7 +76,7 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithOneRestaurantHasVotesAndOthersZero() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(ONLY_WINNER_SCENARIO_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(ONLY_WINNER_SCENARIO_RESULTS);
 
         assertThat(winner).isPresent();
         assertThat(winner.get().getRestaurantId()).isEqualTo(RESTAURANT2_ID);
@@ -85,7 +85,7 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithTwoDaysAgoData() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(TWO_DAYS_AGO_EXPECTED_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(TWO_DAYS_AGO_EXPECTED_RESULTS);
 
         assertThat(winner).isPresent();
         assertThat(winner.get().getRestaurantId()).isEqualTo(twoDaysAgoResultForRestaurant1.getRestaurantId());
@@ -94,14 +94,14 @@ public class WinnerValidatorTest {
 
     @Test
     void determineWinner_WithYesterdayData() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(YESTERDAY_EXPECTED_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(YESTERDAY_EXPECTED_RESULTS);
 
         assertThat(winner).isEmpty();
     }
 
     @Test
     void determineWinner_WithTodayData() {
-        Optional<VoteResultTo> winner = winnerValidator.determineWinner(TODAY_EXPECTED_RESULTS);
+        Optional<VoteResultTo> winner = winnerDeterminer.determineWinner(TODAY_EXPECTED_RESULTS);
 
         assertThat(winner).isEmpty();
     }

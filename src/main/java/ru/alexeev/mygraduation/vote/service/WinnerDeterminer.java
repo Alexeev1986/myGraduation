@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Component
 @Slf4j
-public class WinnerValidator {
+public class WinnerDeterminer {
     public Optional<VoteResultTo> determineWinner(List<VoteResultTo> results) {
         if (results == null || results.isEmpty()) {
             log.info("No results to determine winner");

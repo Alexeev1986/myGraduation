@@ -35,7 +35,7 @@ public class VoteService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
-    private final WinnerValidator winnerValidator;
+    private final WinnerDeterminer winnerDeterminer;
 
     @Autowired
     private VoteService self;
@@ -56,7 +56,7 @@ public class VoteService {
     public Optional<VoteResultTo> getTodayWinner() {
         log.info("get today's winner");
         List<VoteResultTo> results = self.getVoteResultsForDate(LocalDate.now(clock));
-        return winnerValidator.determineWinner(results);
+        return winnerDeterminer.determineWinner(results);
     }
 
     @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
