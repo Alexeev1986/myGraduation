@@ -12,6 +12,7 @@ import ru.alexeev.mygraduation.restaurant.service.RestaurantService;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
 import ru.alexeev.mygraduation.restaurant.to.RestaurantTo;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.*;
 public class RestaurantController {
     static final String REST_URL = "/api/restaurants";
 
+    private final Clock clock;
     private final RestaurantService restaurantService;
 
     @GetMapping
@@ -44,7 +46,7 @@ public class RestaurantController {
     @GetMapping("/{id}/menus/today")
     public MenuTo getTodayMenu(@PathVariable int id) {
         log.info("get today menu for restaurant {}", id);
-        Menu menu = restaurantService.getMenuByRestaurantAndDate(id, LocalDate.now());
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(id, LocalDate.now(clock));
         return toMenuTo(menu);
     }
 
