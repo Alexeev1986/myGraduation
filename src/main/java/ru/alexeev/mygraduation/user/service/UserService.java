@@ -49,7 +49,7 @@ public class UserService {
         log.info("update user {} with id {}", userTo, id);
         User user = get(id);
         updateFromTo(user, userTo);
-        userRepository.save(user);
+        userRepository.prepareAndSave(user);
     }
 
     @Transactional
