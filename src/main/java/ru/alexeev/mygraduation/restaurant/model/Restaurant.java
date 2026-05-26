@@ -27,7 +27,8 @@ public class Restaurant extends NamedEntity {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Vote> votes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "restaurant", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "restaurant", fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Menu> menus = new ArrayList<>();
 
     public Restaurant(Integer id, String name) {

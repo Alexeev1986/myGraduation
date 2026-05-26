@@ -80,7 +80,7 @@ public class RestaurantService {
 
         LocalDate date = menuTo.getDate();
         menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .ifPresent(menu -> menuRepository.deleteExisted(menu.getId()));
+                .ifPresent(menuRepository::delete);
 
         Menu menu = menuRepository.save(new Menu(null, restaurant, date));
 
@@ -113,7 +113,7 @@ public class RestaurantService {
         restaurantRepository.getExisted(restaurantId);
         Menu menu = menuRepository.getExisted(menuId);
         if (menu.getRestaurant().id() != restaurantId) {
-            throw new DataConflictException("Menu does not belong to restaurant");
+            throw new DataConflictException("menu does not belong to restaurant");
         }
         return menu;
     }
@@ -133,6 +133,6 @@ public class RestaurantService {
     public Menu getMenuByRestaurantAndDate(int restaurantId, LocalDate date) {
         log.info("get menu for restaurant {} on {}", restaurantId, date);
         return menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .orElseThrow(() -> new NotFoundException("Menu not found for restaurant " + restaurantId + " on " + date));
+                .orElseThrow(() -> new NotFoundException("menu not found for restaurant " + restaurantId + " on " + date));
     }
 }

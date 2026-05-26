@@ -33,7 +33,6 @@ public class Vote extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private Restaurant restaurant;
 
     @Column(name = "vote_date", nullable = false)
