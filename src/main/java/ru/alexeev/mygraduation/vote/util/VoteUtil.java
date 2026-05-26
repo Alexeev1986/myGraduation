@@ -2,7 +2,6 @@ package ru.alexeev.mygraduation.vote.util;
 
 import lombok.experimental.UtilityClass;
 import ru.alexeev.mygraduation.vote.model.Vote;
-import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteTo;
 
 import java.util.List;
@@ -27,14 +26,5 @@ public class VoteUtil {
         return votes.stream()
                 .map(VoteUtil::toVoteTo)
                 .toList();
-    }
-
-    public static List<VoteResultTo> convertToVoteResultTos(List<Object[]> rawResults) {
-        return rawResults.stream()
-                .map(row -> new VoteResultTo(
-                        (Integer) row[0],
-                        (String) row[1],
-                        (Long) row[2]
-                )).toList();
     }
 }

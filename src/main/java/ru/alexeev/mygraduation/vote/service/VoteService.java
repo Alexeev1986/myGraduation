@@ -2,6 +2,7 @@ package ru.alexeev.mygraduation.vote.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -13,18 +14,17 @@ import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.repository.UserRepository;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.repository.VoteRepository;
+import ru.alexeev.mygraduation.vote.to.VoteResultRecord;
 import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
-
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static ru.alexeev.mygraduation.vote.util.VoteUtil.convertToVoteResultTos;
 
 @Service
 @AllArgsConstructor
@@ -35,43 +35,28 @@ public class VoteService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
-    private final CacheHelper cacheHelper;
+    private final WinnerValidator winnerValidator;
+
+    @Autowired
+    private VoteService self;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
 
-    @Service
-    @AllArgsConstructor
-    @Slf4j
-    static class CacheHelper{
-        private final VoteRepository voteRepository;
-        private final WinnerValidator winnerValidator;
-
-        @Cacheable(value = "vote_results", key = "#date.toString()")
-        @Transactional(readOnly = true)
-        public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
-            log.info("get vote results for date {} - loading from DB", date);
-            List<Object[]> rawResults = voteRepository.getVoteResultsRawForDate(date);
-            return convertToVoteResultTos(rawResults);
-        }
-
-        @Cacheable(value = "today_winner", key = "#root.methodName")
-        @Transactional(readOnly = true)
-        public Optional<VoteResultTo> getTodayWinner(List<VoteResultTo> results) {
-            log.info("get today's winner - loading from DB");
-            return winnerValidator.determineWinner(results);
-        }
-    }
-
-    @Transactional
+    @Cacheable(value = "vote_results", key = "#date.toString()")
+    @Transactional(readOnly = true)
     public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
         log.info("get vote results for date {}", date);
-        return cacheHelper.getVoteResultsForDate(date);
+        List<VoteResultRecord> records = voteRepository.getVoteResultsForDateRange(date, date);
+        return records.stream()
+                .map(r -> new VoteResultTo(r.restaurantId(), r.restaurantName(), r.votesCount()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public Optional<VoteResultTo> getTodayWinner() {
         log.info("get today's winner");
-        return cacheHelper.getTodayWinner(getTodayVoteResults());
+        List<VoteResultTo> results = self.getVoteResultsForDate(LocalDate.now(clock));
+        return winnerValidator.determineWinner(results);
     }
 
     @CacheEvict(value = {"vote_results", "today_winner"}, allEntries = true)
@@ -128,16 +113,25 @@ public class VoteService {
     @Transactional(readOnly = true)
     public List<VoteResultTo> getTodayVoteResults() {
         log.info("get today results");
-        return cacheHelper.getVoteResultsForDate(LocalDate.now(clock));
+        return self.getVoteResultsForDate(LocalDate.now(clock));
     }
 
     @Transactional(readOnly = true)
     public Map<LocalDate, List<VoteResultTo>> getVoteResultsForDateRange(LocalDate start, LocalDate end) {
         log.info("get vote results from {} to {}", start, end);
+
+        List<VoteResultRecord> records = voteRepository.getVoteResultsForDateRange(start, end);
+
         Map<LocalDate, List<VoteResultTo>> results = new LinkedHashMap<>();
+
+        for (VoteResultRecord record : records) {
+            VoteResultTo resultTo = new VoteResultTo(record.restaurantId(), record.restaurantName(), record.votesCount());
+            results.computeIfAbsent(record.voteDate(), k -> new ArrayList<>()).add(resultTo);
+        }
+
         LocalDate current = start;
         while (!current.isAfter(end)) {
-            results.put(current, cacheHelper.getVoteResultsForDate(current));
+            results.putIfAbsent(current, List.of());
             current = current.plusDays(1);
         }
         return results;
