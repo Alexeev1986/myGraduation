@@ -2,9 +2,7 @@ package ru.alexeev.mygraduation.vote.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
@@ -17,6 +15,8 @@ import ru.alexeev.mygraduation.vote.repository.VoteRepository;
 import ru.alexeev.mygraduation.vote.to.VoteResultRecord;
 import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
+import ru.alexeev.mygraduation.vote.util.VoteCacheService;
+
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -36,26 +36,19 @@ public class VoteService {
     private final RestaurantRepository restaurantRepository;
     private final Clock clock;
     private final WinnerDeterminer winnerDeterminer;
-
-    @Autowired
-    private VoteService self;
+    private final VoteCacheService voteCacheService;
 
     private static final LocalTime DEADLINE = LocalTime.of(11, 0);
 
-    @Cacheable(value = "vote_results", key = "#date.toString()")
-    @Transactional(readOnly = true)
     public List<VoteResultTo> getVoteResultsForDate(LocalDate date) {
         log.info("get vote results for date {}", date);
-        List<VoteResultRecord> records = voteRepository.getVoteResultsForDateRange(date, date);
-        return records.stream()
-                .map(r -> new VoteResultTo(r.restaurantId(), r.restaurantName(), r.votesCount()))
-                .toList();
+        return voteCacheService.getVoteResultsForDate(date);
     }
 
     @Transactional(readOnly = true)
     public Optional<VoteResultTo> getTodayWinner() {
         log.info("get today's winner");
-        List<VoteResultTo> results = self.getVoteResultsForDate(LocalDate.now(clock));
+        List<VoteResultTo> results = voteCacheService.getVoteResultsForDate(LocalDate.now(clock));
         return winnerDeterminer.determineWinner(results);
     }
 
@@ -113,7 +106,7 @@ public class VoteService {
     @Transactional(readOnly = true)
     public List<VoteResultTo> getTodayVoteResults() {
         log.info("get today results");
-        return self.getVoteResultsForDate(LocalDate.now(clock));
+        return voteCacheService.getVoteResultsForDate(LocalDate.now(clock));
     }
 
     @Transactional(readOnly = true)
