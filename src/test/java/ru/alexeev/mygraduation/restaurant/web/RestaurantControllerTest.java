@@ -31,7 +31,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @Test
     @WithMockUser(roles = {"USER", "ADMIN"})
     void getAllWithTodayMenusAsUser() throws Exception {
-        List<Restaurant> restaurants = getAllRestaurants();
+        List<Restaurant> restaurants = getAllRestaurantsData();
         List<RestaurantTo> expected = toRestaurantTosWithTodayMenu(restaurants);
 
 

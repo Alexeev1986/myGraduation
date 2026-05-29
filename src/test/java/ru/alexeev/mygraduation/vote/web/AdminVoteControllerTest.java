@@ -45,20 +45,9 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = USER_MAIL)
-    void userGetResultsForDate() throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL + "/results")
-                .param("date", LocalDate.now().toString())
-                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-    }
-
-
-    @Test
     void unauthorizedGetResultsForDate() throws Exception {
         perform(MockMvcRequestBuilders.get(REST_URL + "/results")
-                .param("date", LocalDate.now().toString())
+                .param("date", TODAY.toString())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
@@ -73,7 +62,7 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     })
     @WithUserDetails(value = ADMIN_MAIL)
     void getRestaurantForeDate(int dayOffSet, int expectedVotes1, int expectedVotes2, int expectedVotes3, boolean hasMenu ) throws Exception {
-        LocalDate date = LocalDate.now().plusDays(dayOffSet);
+        LocalDate date = TODAY.plusDays(dayOffSet);
         setFixedDate(clock, date, 10, 30);
 
         ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results")
@@ -140,8 +129,8 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     })
     @WithUserDetails(value = ADMIN_MAIL)
     void getResultsForDateRange(int startOffset, int endOffset, int expectedDays) throws Exception {
-        LocalDate start = LocalDate.now().plusDays(startOffset);
-        LocalDate end = LocalDate.now().plusDays(endOffset);
+        LocalDate start = TODAY.plusDays(startOffset);
+        LocalDate end = TODAY.plusDays(endOffset);
         setFixedDate(clock, start, 10, 30);
 
         ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
@@ -153,7 +142,7 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
 
         String jsonResponse = actions.andReturn().getResponse().getContentAsString();
 
-        long actualDays = LocalDate.now().plusDays(startOffset).datesUntil(LocalDate.now().plusDays(endOffset).plusDays(1)).count();
+        long actualDays = TODAY.plusDays(startOffset).datesUntil(TODAY.plusDays(endOffset).plusDays(1)).count();
         assertThat(actualDays).isEqualTo(expectedDays);
 
         LocalDate current = start;
@@ -167,7 +156,7 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     @WithUserDetails(value = ADMIN_MAIL)
     void getResultsForDateRangeWithMissingStartParam() throws Exception {
         perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
-                .param("end", LocalDate.now().toString())
+                .param("end", TODAY.toString())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
@@ -177,7 +166,7 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     @WithUserDetails(value = ADMIN_MAIL)
     void getResultsForDateRangeWithMissingEndParam() throws Exception {
         perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
-                .param("start", LocalDate.now().toString())
+                .param("start", TODAY.toString())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
@@ -186,10 +175,9 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void getResultsForDateRangeWithStartAfterEnd() throws Exception {
-        LocalDate start = LocalDate.now();
-        LocalDate end = LocalDate.now().minusDays(1);
+        LocalDate end = TODAY.minusDays(1);
         ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
-                .param("start", start.toString())
+                .param("start", TODAY.toString())
                 .param("end", end.toString())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -201,16 +189,36 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void getResultsForDateRangeWithEmptyRange() throws Exception {
-        LocalDate start = LocalDate.now().plusDays(1);
-        LocalDate end = LocalDate.now();
+        LocalDate start = TODAY.plusDays(1);
         ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
                 .param("start", start.toString())
-                .param("end", end.toString())
+                .param("end", TODAY.toString())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk());
         String jsonResponse = actions.andReturn().getResponse().getContentAsString();
         assertThat(jsonResponse).isEqualTo("{}");
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void userGetResultsForDate() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/results")
+                .param("date", TODAY.toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void userGetResultsRange() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/results/range")
+                .param("start", TODAY.toString())
+                .param("end", TODAY.toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -229,17 +237,7 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
     @Test
     @WithUserDetails(value = USER_MAIL)
     void userGetGeneralStats() throws Exception {
-        ResultActions actions = perform(MockMvcRequestBuilders.get(REST_URL + "/stats")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-    }
-
-    @ParameterizedTest
-    @CsvSource({"/results", "/results/range", "/stats"})
-    @WithUserDetails(value = USER_MAIL)
-    void allAdminEndpointsWithForbiddenForUser(String path) throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL + path)
+        perform(MockMvcRequestBuilders.get(REST_URL + "/stats")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -252,4 +250,36 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0, 1",
+            "10, 0"
+    })
+    @WithUserDetails(value = ADMIN_MAIL)
+    void getVotesCountForRestaurantToday(int dayOffSet, String expectedVotes) throws Exception {
+        setFixedDate(clock, TODAY.plusDays(dayOffSet), 10, 30);
+        perform(MockMvcRequestBuilders.get(REST_URL + "/restaurants/" + RESTAURANT1_ID + "/today/count"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedVotes));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void userGetVotesCountForRestaurantToday() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/restaurants/1/today/count")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getVotesCountForRestaurantTodayUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.get(REST_URL + "/restaurants/" + RESTAURANT1_ID + "/today/count"))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+
 }

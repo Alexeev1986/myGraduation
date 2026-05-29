@@ -41,6 +41,31 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void getAllRestaurants() throws Exception {
+        ResultActions createAction = perform(MockMvcRequestBuilders.get(REST_URL + "/all"))
+                .andDo(print())
+                .andExpect(status().isOk());
+        List<Restaurant> expectedRestaurants = RESTAURANT_MATCHER.readListFromJson(createAction);
+        RESTAURANT_MATCHER.assertMatch(expectedRestaurants, getAllRestaurantsData());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getAllRestaurantsWithUser() throws Exception {
+        ResultActions createAction = perform(MockMvcRequestBuilders.get(REST_URL + "/all"))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getAllRestaurantsWithUnauthorized() throws Exception {
+        ResultActions createAction = perform(MockMvcRequestBuilders.get(REST_URL + "/all"))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void create() throws Exception{
         Restaurant newRestaurant = getNew();
         ResultActions actions = perform(MockMvcRequestBuilders.post(REST_URL)

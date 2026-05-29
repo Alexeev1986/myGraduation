@@ -3,10 +3,7 @@ package ru.alexeev.mygraduation.vote.web;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.alexeev.mygraduation.vote.service.VoteService;
 import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
@@ -39,5 +36,11 @@ public class AdminVoteController {
     public VoteStatsTo getGeneralStats() {
         log.info("Admin get general voting statistics");
         return voteService.getGeneralStats();
+    }
+
+    @GetMapping("/restaurants/{restaurantId}/today/count")
+    public int getVotesCountForRestaurantToday(@PathVariable int restaurantId) {
+        log.info("Admin get votes count for restaurant {} today", restaurantId);
+        return voteService.getVotesCountForRestaurantToday(restaurantId);
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import ru.alexeev.mygraduation.vote.AbstractVoteControllerTest;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteTo;
@@ -27,7 +28,7 @@ import static ru.alexeev.mygraduation.vote.VoteTestData.NOT_FOUND;
 import static ru.alexeev.mygraduation.vote.util.VoteUtil.toVoteTo;
 import static ru.alexeev.mygraduation.vote.web.VoteController.REST_URL;
 
-class VoteControllerTest extends AdminVoteControllerTest {
+class VoteControllerTest extends AbstractVoteControllerTest {
 
     @Test
     @WithUserDetails(value = VOTER_MAIL)

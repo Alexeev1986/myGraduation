@@ -31,7 +31,7 @@ class RestaurantServiceTest extends AbstractServiceTest {
     void getAll() {
         List<Restaurant> restaurants = restaurantService.getAll();
         assertThat(restaurants).hasSize(3);
-        RESTAURANT_MATCHER.assertMatch(restaurants, getAllRestaurants());
+        RESTAURANT_MATCHER.assertMatch(restaurants, getAllRestaurantsData());
     }
 
     @Test

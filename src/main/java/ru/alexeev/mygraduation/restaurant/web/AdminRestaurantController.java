@@ -13,6 +13,7 @@ import ru.alexeev.mygraduation.restaurant.service.RestaurantService;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
 
 import java.net.URI;
+import java.util.List;
 
 import static ru.alexeev.mygraduation.common.validation.ValidationUtil.assureIdConsistent;
 import static ru.alexeev.mygraduation.common.validation.ValidationUtil.checkIsNew;
@@ -25,6 +26,12 @@ public class AdminRestaurantController {
     static final String REST_URL = "/api/admin/restaurants";
 
     private final RestaurantService restaurantService;
+
+    @GetMapping("/all")
+    public List<Restaurant> getAllRestaurants() {
+        log.info("get all restaurants without menu");
+        return restaurantService.getAll();
+    }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Restaurant> create(@Valid @RequestBody Restaurant restaurant) {

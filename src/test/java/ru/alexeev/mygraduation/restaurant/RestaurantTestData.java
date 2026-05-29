@@ -91,10 +91,6 @@ public class RestaurantTestData {
         restaurant3.setMenus(List.of(menu3));
     }
 
-    public static List<Restaurant> getAllRestaurants() {
-        return List.of(restaurant2, restaurant3, restaurant1);
-    }
-
     public static Restaurant getNew() {
         return new Restaurant(null, "Новый ресторан");
     }
@@ -147,5 +143,8 @@ public class RestaurantTestData {
         return new MenuTo(NOT_FOUND, TOMORROW, List.of(new DishTo(null, "Блюдо", 100)));
     }
 
+    public static List<Restaurant> getAllRestaurantsData() {
+        return List.of(restaurant2, restaurant3, restaurant1);
+    }
 
 }
