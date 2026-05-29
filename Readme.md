@@ -20,6 +20,13 @@
 http://localhost:8080/swagger-ui/index.html
 ````
 
+## Postman коллекция
+
+В папке `postman/` находится коллекция запросов для Postman:
+
+- `Restaurant_Voting_System.postman_collection.json` — коллекция всех API запросов
+- `Local.postman_environment.json` — окружение с переменной `baseUrl`
+
 ## Технологии
 
 - Java 21
@@ -133,9 +140,9 @@ curl -X GET "http://localhost:8080/api/restaurants/1" -u user@yandex.ru:password
 ```bash
 curl -X GET "http://localhost:8080/api/restaurants/1/menus/today" -u user@yandex.ru:password
 ```
-# 4. Получить меню по дате
+# 4. Получить меню по дате (вместо 2026-05-29 подставьте текущую дату)
 ```bash
-curl -X GET "http://localhost:8080/api/restaurants/1/menus/by-date?date=2026-05-31" -u user@yandex.ru:password
+curl -X GET "http://localhost:8080/api/restaurants/1/menus/by-date?date=2026-05-29" -u user@yandex.ru:password
 ```
 # 5. Создать голос
 ```bash
@@ -201,11 +208,11 @@ curl -X GET "http://localhost:8080/api/admin/users/2/votes" -u admin@gmail.com:a
 ```bash
 curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" -H "Content-Type: application/json" -u admin@gmail.com:admin
 ```
-# 21. Получить результаты за конкретную дату (ADMIN)
+# 21. Получить результаты за конкретную дату (ADMIN) - подставьте текущую дату
 ```bash
 curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-29" -u admin@gmail.com:admin
 ```
-# 22. Получить результаты за период (ADMIN)
+# 22. Получить результаты за период (ADMIN) - подставьте нужные start и end даты
 ```bash
 curl -X GET "http://localhost:8080/api/admin/votes/results/range?start=2026-05-01&end=2026-05-31" -u admin@gmail.com:admin
 ```
@@ -227,6 +234,7 @@ curl -X GET "http://localhost:8080/api/admin/votes/stats" -u admin@gmail.com:adm
 | 404     | Ресурс не найден                                   |
 | 409     | Конфликт (голосование после дедлайна или дубликат) |
 | 422     | Ошибка валидации                                   |
+
 
 ## Заключение
 
