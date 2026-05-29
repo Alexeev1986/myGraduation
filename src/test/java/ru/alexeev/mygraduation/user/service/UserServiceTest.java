@@ -37,7 +37,7 @@ class UserServiceTest {
 
     @Test
     void getAll() {
-        USER_MATCHER.assertMatch(userService.getAll(), List.of(admin, guest, user));
+        USER_MATCHER.assertMatch(userService.getAll(), List.of(admin, user, voter));
     }
 
     @Test

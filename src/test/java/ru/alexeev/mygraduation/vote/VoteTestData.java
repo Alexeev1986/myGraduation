@@ -56,11 +56,11 @@ public class VoteTestData {
 
     public static final Vote vote3 = new Vote(VOTE3_ID, user, restaurant1, YESTERDAY, USER_VOTE_TIME_YESTERDAY);
     public static final Vote vote4 = new Vote(VOTE4_ID, admin, restaurant3, YESTERDAY, ADMIN_VOTE_TIME_YESTERDAY);
-    public static final Vote vote5 = new Vote(VOTE5_ID, guest, restaurant2, YESTERDAY, GUEST_VOTE_TIME_YESTERDAY);
+    public static final Vote vote5 = new Vote(VOTE5_ID, voter, restaurant2, YESTERDAY, GUEST_VOTE_TIME_YESTERDAY);
 
     public static final Vote vote6 = new Vote(VOTE6_ID, user, restaurant2, TWO_DAYS_AGO, USER_VOTE_TIME_TWO_DAYS_AGO);
     public static final Vote vote7 = new Vote(VOTE7_ID, admin, restaurant1, TWO_DAYS_AGO, ADMIN_VOTE_TIME_TWO_DAYS_AGO);
-    public static final Vote vote8 = new Vote(VOTE8_ID, guest, restaurant1, TWO_DAYS_AGO, GUEST_VOTE_TIME_TWO_DAYS_AGO);
+    public static final Vote vote8 = new Vote(VOTE8_ID, voter, restaurant1, TWO_DAYS_AGO, GUEST_VOTE_TIME_TWO_DAYS_AGO);
 
     public static final VoteResultTo todayResultForRestaurant1 = new VoteResultTo(RESTAURANT1_ID, restaurant1.getName(), 1);
     public static final VoteResultTo todayResultForRestaurant2 = new VoteResultTo(RESTAURANT2_ID, restaurant2.getName(), 1);

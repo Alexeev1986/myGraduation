@@ -15,8 +15,8 @@ import ru.alexeev.mygraduation.restaurant.model.Dish;
 import ru.alexeev.mygraduation.restaurant.model.Menu;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
 import ru.alexeev.mygraduation.restaurant.service.RestaurantService;
+import ru.alexeev.mygraduation.restaurant.to.DishTo;
 import ru.alexeev.mygraduation.restaurant.to.MenuTo;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.*;
-import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.*;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.createdDishFromMenuItem;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.createdDishToFromMenuItem;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.newMenuTo;
+import static ru.alexeev.mygraduation.restaurant.util.RestaurantUtil.toDishes;
 import static ru.alexeev.mygraduation.restaurant.web.AdminRestaurantController.REST_URL;
 
 class AdminRestaurantControllerTest extends AbstractControllerTest {
@@ -64,6 +67,17 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
+    void createWithDuplicateName() throws Exception{
+        Restaurant duplicate = new Restaurant(null, restaurant1.getName());
+        perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(duplicate)))
+                .andExpect(status().isConflict());
+    }
+
+
+        @Test
     @WithMockUser(roles = "USER")
     void createWithUser() throws Exception{
         Restaurant newRestaurant = getNew();
@@ -119,6 +133,16 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
                 .content(JsonUtil.writeValue(updated)))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateWithDuplicateName() throws Exception {
+        Restaurant updated = new Restaurant(RESTAURANT1_ID, restaurant2.getName());
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(updated)))
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -181,7 +205,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     @WithMockUser(roles = "ADMIN")
     void addMenu() throws Exception {
         MenuTo menuTo = getNewMenuToForRestaurant1();
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -190,21 +214,23 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
         assertThat(created).isNotNull();
         assertThat(created.getDate()).isEqualTo(menuTo.getDate());
 
-        DISH_MATCHER.assertMatch(created.getDishes(), toDishes(menuTo.getDishes()));
+        List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+        List<Dish> expectedDishes = toDishes(menuTo.getDishes());
+        DISH_MATCHER.assertMatch(actualDishes, expectedDishes);
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void addMenuAndUpdateExisting() throws Exception {
         MenuTo firstMenu = getNewMenuToForRestaurant1();
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(firstMenu)))
                 .andDo(print())
                 .andExpect(status().isCreated());
 
         MenuTo updateMenuTo = getUpdatedMenuToForRestaurant1();
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(updateMenuTo)))
                 .andDo(print())
@@ -212,7 +238,9 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
 
         Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, updateMenuTo.getDate());
         assertThat(created).isNotNull();
-        DISH_MATCHER.assertMatch(created.getDishes(), toDishes(updateMenuTo.getDishes()));
+        List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+        List<Dish> expectedDishes = toDishes(updateMenuTo.getDishes());
+        DISH_MATCHER.assertMatch(actualDishes, expectedDishes);
     }
 
     @Test
@@ -220,7 +248,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuWithNullDate() throws Exception {
         MenuTo menuWithNullDate = getMenuWithNullDate();
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuWithNullDate)))
                 .andDo(print())
@@ -232,7 +260,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuWithEmptyDishes() throws Exception {
         MenuTo menuWithEmptyDishes = getMenuWithEmptyDishes();
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuWithEmptyDishes)))
                 .andDo(print())
@@ -244,7 +272,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuForNotFoundRestaurant() throws Exception {
         MenuTo menuTo = getNewMenuToForRestaurant1();
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + NOT_FOUND + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + NOT_FOUND + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -256,7 +284,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuWithUserRole() throws Exception {
         MenuTo menuTo = getNewMenuToForRestaurant1();
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -267,7 +295,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuUnauthorized() throws Exception {
         MenuTo menuTo = getNewMenuToForRestaurant1();
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -277,12 +305,9 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     @ParameterizedTest
     @CsvSource({
             "0, 422, false",
-            "1, 422, false",
+            "1, 201, true",
             "2, 201, true",
-            "3, 201, true",
-            "4, 201, true",
-            "5, 201, true",
-            "6, 422, false"
+            "10, 201, true"
     })
     @WithMockUser(roles = "ADMIN")
     void addMenuWithDifferentDishCounts(int dishCount, int expectedStatus, boolean shouldSucceed) throws Exception {
@@ -293,7 +318,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
 
         MenuTo menuTo = newMenuTo(TOMORROW, dishes);
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -301,14 +326,15 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
 
         if (shouldSucceed) {
             Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
-            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+            List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+            DISH_MATCHER.assertMatch(actualDishes, dishes);
         }
     }
 
     @ParameterizedTest
     @CsvSource({
-            "-2, 409, false",
-            "-1, 409, false",
+            "-2, 422, false",
+            "-1, 422, false",
             "0, 201, true",
             "1, 201, true",
             "2, 201, true",
@@ -319,7 +345,7 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
         List<Dish> dishes = List.of(dish1, dish2);
         MenuTo menuTo = newMenuTo(date, dishes);
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
@@ -329,7 +355,8 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
             Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, date);
             assertThat(created).isNotNull();
             assertThat(created.getDate()).isEqualTo(date);
-            DISH_MATCHER.assertMatch(created.getDishes(), dishes);
+            List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+            DISH_MATCHER.assertMatch(actualDishes, dishes);
         }
     }
 
@@ -338,14 +365,16 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     void addMenuReusesExistingDish() throws Exception {
         MenuTo menuTo = newMenuTo(TOMORROW, List.of(dish1, dish2));
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
                 .andExpect(status().isCreated());
 
         Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, menuTo.getDate());
-        DISH_MATCHER.assertMatch(created.getDishes(), List.of(dish1, dish2));
+
+        List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
+        DISH_MATCHER.assertMatch(actualDishes, List.of(dish1, dish2));
     }
 
     @Test
@@ -354,10 +383,109 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
         List<Dish> duplicateDishes = List.of(dish1, dish2, dish1);
         MenuTo menuTo = newMenuTo(TOMORROW, duplicateDishes);
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menu")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMenu() throws Exception {
+
+        Menu existingMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+
+        List<DishTo> updateDishes = getUpdatedDishesTo();
+        MenuTo updatedMenuTo = new MenuTo(existingMenu.id(), TODAY, updateDishes);
+
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + existingMenu.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(updatedMenuTo)))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        Menu afterUpdate = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        List<DishTo> afterUpdateDishes = createdDishToFromMenuItem(afterUpdate.getMenuItems());
+        DISH_TO_MATCHER.assertMatch(afterUpdateDishes, updateDishes);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMenuWithEmptyDishes() throws Exception {
+        Menu existingMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        MenuTo emptyMenuTo = new MenuTo(existingMenu.id(), TODAY, List.of());
+
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + existingMenu.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(emptyMenuTo)))
+                .andExpect(status().isUnprocessableContent());
+    }
+
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMenuNotFound() throws Exception {
+        MenuTo menuTo = getNotFoundMenuTo();
+
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(menuTo)))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateMenuWithInvalidDate() throws Exception {
+        Menu existingMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+
+        MenuTo invalidMenuTo = new MenuTo(existingMenu.getId(), YESTERDAY, List.of(new DishTo(null, "Блюдо", 100)));
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + existingMenu.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(invalidMenuTo)))
+                .andDo(print())
+                .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void updateMenuWithUserRole() throws Exception {
+        MenuTo menuTo = getNewMenuTo();
+
+        perform(MockMvcRequestBuilders.put(REST_URL_SLASH + RESTAURANT1_ID + "/menus/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JsonUtil.writeValue(menuTo)))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteMenu() throws Exception {
+        Menu existingMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+
+        perform(MockMvcRequestBuilders.delete(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + existingMenu.id()))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteMenuNotFound() throws Exception {
+        perform(MockMvcRequestBuilders.delete(REST_URL_SLASH + RESTAURANT1_ID + "/menus/" + NOT_FOUND))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteMenuWithUserRole() throws Exception {
+        perform(MockMvcRequestBuilders.delete(REST_URL_SLASH + RESTAURANT1_ID + "/menus/1"))
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 }

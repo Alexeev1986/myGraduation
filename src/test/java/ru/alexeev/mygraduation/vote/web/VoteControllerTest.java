@@ -21,15 +21,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT1_ID;
 import static ru.alexeev.mygraduation.restaurant.RestaurantTestData.RESTAURANT3_ID;
-import static ru.alexeev.mygraduation.user.UserTestData.USER_ID;
+import static ru.alexeev.mygraduation.user.UserTestData.*;
 import static ru.alexeev.mygraduation.vote.VoteTestData.*;
+import static ru.alexeev.mygraduation.vote.VoteTestData.NOT_FOUND;
 import static ru.alexeev.mygraduation.vote.util.VoteUtil.toVoteTo;
 import static ru.alexeev.mygraduation.vote.web.VoteController.REST_URL;
 
 class VoteControllerTest extends AdminVoteControllerTest {
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void vote() throws Exception {
         setFixedTime(clock, 10, 30);
         ResultActions actions = perform(MockMvcRequestBuilders.post(REST_URL)
@@ -45,7 +46,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteForNonExistentRestaurant() throws Exception {
         setFixedTime(clock, 10, 30);
         perform(MockMvcRequestBuilders.post(REST_URL)
@@ -56,7 +57,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteWithoutRestaurantId() throws Exception {
         setFixedTime(clock, 10, 30);
         perform(MockMvcRequestBuilders.post(REST_URL)
@@ -78,21 +79,23 @@ class VoteControllerTest extends AdminVoteControllerTest {
 
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteUpdateExisting() throws Exception {
         setFixedTime(clock, 10, 30);
 
-        perform(MockMvcRequestBuilders.post(REST_URL)
+        ResultActions createAction = perform(MockMvcRequestBuilders.post(REST_URL)
                 .param("restaurantId", String.valueOf(RESTAURANT1_ID))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isCreated());
 
-        ResultActions actions = perform(MockMvcRequestBuilders.post(REST_URL)
+        VoteTo createdVote = VOTE_TO_MATCHER.readFromJson(createAction);
+
+        ResultActions actions = perform(MockMvcRequestBuilders.put(REST_URL + "/" + createdVote.id())
                 .param("restaurantId", String.valueOf(RESTAURANT3_ID))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isCreated());
+                .andExpect(status().isOk());
 
         VoteTo actual = VOTE_TO_MATCHER.readFromJson(actions);
         Vote vote = getCurrentUserVote();
@@ -106,10 +109,10 @@ class VoteControllerTest extends AdminVoteControllerTest {
             "10, 30, true",
             "10, 59, true",
             "11, 0, true",
-            "11, 1, false",
-            "12, 0, false"
+            "11, 1, true",
+            "12, 0, true"
     })
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteAtDifferentTimes(int hour, int minute, boolean shouldSucceed) throws Exception {
         setFixedTime(clock, hour, minute);
         ResultActions actions = perform(MockMvcRequestBuilders.post(REST_URL)
@@ -120,7 +123,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
         if (shouldSucceed) {
             actions.andExpect(status().isCreated());
             VoteTo actual = VOTE_TO_MATCHER.readFromJson(actions);
-            Vote vote = voteService.findByUser(USER_ID).getFirst();
+            Vote vote = getCurrentUserVote();
             VoteTo expected = toVoteTo(vote);
             VOTE_TO_MATCHER.assertMatch(actual, expected);
         } else {
@@ -137,34 +140,36 @@ class VoteControllerTest extends AdminVoteControllerTest {
             "11, 1, false",
             "12, 0, false"
     })
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteUpdateAtDifferentTimes(int hour, int minute, boolean shouldSucceed) throws Exception {
         setFixedTime(clock, 10, 30);
-        perform(MockMvcRequestBuilders.post(REST_URL)
+        ResultActions createAction = perform(MockMvcRequestBuilders.post(REST_URL)
                 .param("restaurantId", String.valueOf(RESTAURANT1_ID))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated());
 
+        VoteTo createdVote = VOTE_TO_MATCHER.readFromJson(createAction);
         setFixedTime(clock, hour, minute);
-        ResultActions actions = perform(MockMvcRequestBuilders.post(REST_URL)
+        ResultActions actions = perform(MockMvcRequestBuilders.put(REST_URL + "/" + createdVote.id())
                 .param("restaurantId", String.valueOf(RESTAURANT3_ID))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print());
+
         Vote vote = getCurrentUserVote();
         if (shouldSucceed) {
-            actions.andExpect(status().isCreated());
+            actions.andExpect(status().isOk());
             assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
             assertThat(vote.getVoteTime()).isEqualTo(LocalTime.of(hour, minute));
         } else {
             actions.andExpect(status().isConflict())
-                    .andExpect(content().string(containsString("Cannot vote or change vote after")));
+                    .andExpect(content().string(containsString("Cannot change vote after 11:00")));
             assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT1_ID);
             assertThat(vote.getVoteTime()).isEqualTo(LocalTime.of(10, 30));
         }
     }
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteTwiceSameRestaurant() throws Exception {
         setFixedTime(clock, 10, 30);
 
@@ -176,7 +181,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
         perform(MockMvcRequestBuilders.post(REST_URL)
                 .param("restaurantId", String.valueOf(RESTAURANT1_ID))
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated());
+                .andExpect(status().isConflict());
 
         Vote vote = getCurrentUserVote();
         assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT1_ID);
@@ -189,7 +194,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
             "999999, 404",
             "abc, 422"
     })
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void voteWithVariousRestaurantIds(String restaurantId, int expectedStatus) throws Exception {
         setFixedTime(clock, 10, 30);
 
@@ -206,7 +211,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
             "-1, 1, 1, 1",
             "0, 1, 1, 0"
     })
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void getTodayResults(int dayOffset, int expectedVotes1, int expectedVotes2, int expectedVotes3) throws Exception {
         LocalDate date = LocalDate.now().plusDays(dayOffset);
         setFixedDate(clock, date, 10, 30);
@@ -225,7 +230,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
     }
 
     @Test
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void getTodayResultsShouldBeSorted() throws Exception {
         setFixedDate(clock, TWO_DAYS_AGO, 10, 30);
 
@@ -246,7 +251,7 @@ class VoteControllerTest extends AdminVoteControllerTest {
             "0, 0, false",
             "10, 0, false"
     })
-    @WithUserDetails(value = "user@yandex.ru")
+    @WithUserDetails(value = VOTER_MAIL)
     void getTodayWinner(int dayOffset, int expectedWinnerId, boolean shouldBePresent) throws Exception {
         LocalDate date = LocalDate.now().plusDays(dayOffset);
         setFixedDate(clock, date, 10, 30);
@@ -283,6 +288,6 @@ class VoteControllerTest extends AdminVoteControllerTest {
     }
 
     private Vote getCurrentUserVote() {
-        return voteService.findByUser(USER_ID).getFirst();
+        return voteService.findByUser(VOTER_ID).getFirst();
     }
 }

@@ -35,7 +35,7 @@ import static ru.alexeev.mygraduation.user.UserTestData.getUserWithMultipleRoles
 import static ru.alexeev.mygraduation.user.UserTestData.getWithAdminDuplicateEmail;
 import static ru.alexeev.mygraduation.user.UserTestData.getWithEmptyName;
 import static ru.alexeev.mygraduation.user.UserTestData.getWithHtmlUnsafeName;
-import static ru.alexeev.mygraduation.user.UserTestData.guest;
+import static ru.alexeev.mygraduation.user.UserTestData.voter;
 import static ru.alexeev.mygraduation.user.UserTestData.user;
 import static ru.alexeev.mygraduation.user.util.UsersUtil.*;
 import static ru.alexeev.mygraduation.user.web.ProfileController.REST_URL;
@@ -66,7 +66,7 @@ class ProfileControllerTest extends AbstractControllerTest {
     void delete() throws Exception {
         perform(MockMvcRequestBuilders.delete(REST_URL))
                 .andExpect(status().isNoContent());
-        USER_MATCHER.assertMatch(userService.getAll(), admin, guest);
+        USER_MATCHER.assertMatch(userService.getAll(), admin, voter);
     }
 
     @Test

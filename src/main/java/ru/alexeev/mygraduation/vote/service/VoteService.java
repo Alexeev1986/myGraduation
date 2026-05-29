@@ -59,7 +59,7 @@ public class VoteService {
         LocalDate today = LocalDate.now(clock);
         Optional<Vote> existing = voteRepository.findByUserAndDate(userId, today);
         if (existing.isPresent()) {
-            throw new DataConflictException("You have already voted today. Use update method to update your vore");
+            throw new DataConflictException("You have already voted today. Use update method to update your vote");
         }
         User user = userRepository.getExisted(userId);
         Restaurant restaurant = restaurantRepository.getExisted(restaurantId);
@@ -76,7 +76,7 @@ public class VoteService {
         log.info("update vote: user {} votes for restaurant {}", userId, restaurantId);
         Vote existingVote = voteRepository.getExisted(voteId);
         if (existingVote.getUser().id() != userId) {
-            throw new DataConflictException("you can only update your own vote");
+            throw new DataConflictException("You can only update your own vote");
         }
 
         LocalTime now = LocalTime.now(clock);

@@ -2,7 +2,6 @@ package ru.alexeev.mygraduation.restaurant.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -26,9 +25,8 @@ import java.util.List;
 @Slf4j
 public class RestaurantService {
 
-    @Autowired
-    private MenuValidator menuValidator;
-
+    private final MenuValidator menuValidator;
+    private final RestaurantValidator restaurantValidator;
     private final RestaurantRepository restaurantRepository;
     private final MenuRepository menuRepository;
     private final DishRepository dishRepository;
@@ -54,6 +52,7 @@ public class RestaurantService {
     @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public Restaurant create(Restaurant restaurant) {
         log.info("create restaurant {}", restaurant);
+        restaurantValidator.validateBeforeCreate(restaurant);
         return restaurantRepository.save(restaurant);
     }
 
@@ -62,6 +61,7 @@ public class RestaurantService {
     public void update(Restaurant restaurant, int id) {
         log.info("update restaurant {} with id={}", restaurant, id);
         Restaurant existing = restaurantRepository.getExisted(id);
+        restaurantValidator.validateBeforeUpdate(existing, restaurant);
         existing.setName(restaurant.getName());
     }
 
@@ -72,6 +72,7 @@ public class RestaurantService {
         restaurantRepository.deleteExisted(id);
     }
 
+    @Transactional
     @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public void addMenu(int restaurantId, MenuTo menuTo) {
         log.info("add menu for restaurant {} on {}", restaurantId, menuTo.getDate());
@@ -80,7 +81,10 @@ public class RestaurantService {
 
         LocalDate date = menuTo.getDate();
         menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .ifPresent(menuRepository::delete);
+                .ifPresent(menu -> {
+                        menuRepository.delete(menu);
+                        menuRepository.flush();
+                });
 
         Menu menu = menuRepository.save(new Menu(null, restaurant, date));
 
@@ -90,7 +94,7 @@ public class RestaurantService {
     @Transactional
     @CacheEvict(value = {"restaurant_with_menu", "menus_by_restaurant"}, allEntries = true)
     public void updateMenu(int restaurantId, int menuId, MenuTo menuTo) {
-        log.info("update menu {} for restourant {}", menuId, restaurantId);
+        log.info("update menu {} for restaurant {}", menuId, restaurantId);
         Menu menu = getMenuAndCheckBelonging(restaurantId, menuId);
 
         menuValidator.validate(menuTo);
@@ -113,7 +117,7 @@ public class RestaurantService {
         restaurantRepository.getExisted(restaurantId);
         Menu menu = menuRepository.getExisted(menuId);
         if (menu.getRestaurant().id() != restaurantId) {
-            throw new DataConflictException("menu does not belong to restaurant");
+            throw new DataConflictException("Menu does not belong to restaurant");
         }
         return menu;
     }
@@ -133,6 +137,6 @@ public class RestaurantService {
     public Menu getMenuByRestaurantAndDate(int restaurantId, LocalDate date) {
         log.info("get menu for restaurant {} on {}", restaurantId, date);
         return menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .orElseThrow(() -> new NotFoundException("menu not found for restaurant " + restaurantId + " on " + date));
+                .orElseThrow(() -> new NotFoundException("Menu not found for restaurant " + restaurantId + " on " + date));
     }
 }

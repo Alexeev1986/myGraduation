@@ -25,20 +25,18 @@ public class RestaurantTestData {
     public static final MatcherFactory.Matcher<MenuTo> MENU_TO_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(MenuTo.class);
 
-    public static final MatcherFactory.Matcher<Menu> MENU_MATCHER =
-            MatcherFactory.usingIgnoringFieldsComparator(Menu.class);
-
     public static final MatcherFactory.Matcher<Dish> DISH_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Dish.class, "id");
 
     public static final MatcherFactory.Matcher<Dish> DISH_WITH_ID_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Dish.class);
 
-    public static final MatcherFactory.Matcher<MenuItem> MENU_ITEM_MATCHER =
-            MatcherFactory.usingIgnoringFieldsComparator(MenuItem.class, "id", "menu");
+    public static final MatcherFactory.Matcher<DishTo> DISH_TO_MATCHER =
+            MatcherFactory.usingIgnoringFieldsComparator(DishTo.class);
 
     public static final LocalDate TOMORROW = LocalDate.now().plusDays(1);
     public static final LocalDate TODAY = LocalDate.now();
+    public static final LocalDate YESTERDAY = LocalDate.now().minusDays(1);
 
     public static final int RESTAURANT1_ID = 1;
     public static final int RESTAURANT2_ID = 2;
@@ -128,4 +126,26 @@ public class RestaurantTestData {
     public static List<DishTo> getUpdatedDishesTo() {
         return List.of(toDishTo(dish6), toDishTo(dish10), toDishTo(dish13));
     }
+
+    public static List<DishTo> getNewTwoDishTo() {
+        return List.of(new DishTo(null, "Роллы", 500), new DishTo(null, "Суши", 400));
+    }
+
+    public static List<DishTo> getNewDishTo() {
+        return List.of(new DishTo(null, "Роллы", 500));
+    }
+
+    public static List<DishTo> getDuplicatedTwoDishTo() {
+        return List.of(new DishTo(null, "Роллы", 500), new DishTo(null, "Роллы", 500));
+    }
+
+    public static MenuTo getNewMenuTo() {
+        return new MenuTo(null, TOMORROW, List.of(new DishTo(null, "Роллы", 500)));
+    }
+
+    public static MenuTo getNotFoundMenuTo() {
+        return new MenuTo(NOT_FOUND, TOMORROW, List.of(new DishTo(null, "Блюдо", 100)));
+    }
+
+
 }

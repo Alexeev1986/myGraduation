@@ -5,11 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Transactional;
+import ru.alexeev.mygraduation.AbstractServiceTest;
 import ru.alexeev.mygraduation.app.config.TimeConfig;
 import ru.alexeev.mygraduation.common.error.DataConflictException;
 import ru.alexeev.mygraduation.common.error.NotFoundException;
@@ -18,13 +16,11 @@ import ru.alexeev.mygraduation.user.service.UserService;
 import ru.alexeev.mygraduation.vote.model.Vote;
 import ru.alexeev.mygraduation.vote.to.VoteResultTo;
 import ru.alexeev.mygraduation.vote.to.VoteStatsTo;
-
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,12 +32,10 @@ import static ru.alexeev.mygraduation.user.UserTestData.getNew;
 import static ru.alexeev.mygraduation.user.util.UsersUtil.createToFromUser;
 import static ru.alexeev.mygraduation.vote.VoteTestData.*;
 import static ru.alexeev.mygraduation.vote.VoteTestData.NOT_FOUND;
+import static ru.alexeev.mygraduation.vote.VoteTestData.TODAY;
 
-@SpringBootTest
-@Transactional
 @Import(TimeConfig.class)
-@ActiveProfiles("test")
-class VoteServiceTest {
+class VoteServiceTest extends AbstractServiceTest {
 
     @Autowired
     private VoteService voteService;
@@ -52,11 +46,21 @@ class VoteServiceTest {
     @MockitoBean
     private Clock clock;
 
-
     @BeforeEach
     void setUp() {
 
         setFixedTime(clock, 10, 30);
+    }
+
+    @Test
+    void getTodayVoteResults() {
+        setFixedDate(clock, TODAY, 10, 30);
+        List<VoteResultTo> results = voteService.getTodayVoteResults();
+        assertThat(results).isNotNull();
+        assertThat(results).isNotEmpty();
+
+        int totalVotes = results.stream().mapToInt(VoteResultTo::getVotesCount).sum();
+        assertThat(totalVotes).isEqualTo(2);
     }
 
     @Test
@@ -71,15 +75,15 @@ class VoteServiceTest {
             "10, 30, true",
             "10, 59, true",
             "11, 0, true",
-            "11, 1, false",
-            "12, 0, false"
+            "11, 1, true",
+            "12, 0, true"
     })
     void createNewVoteForNewUserAtDifferentTimes(int hour, int minute, boolean shouldSucceed) {
         setFixedTime(clock, hour, minute);
         User savedUser = createNewUser();
 
         if (shouldSucceed) {
-            Vote vote = voteService.vote(savedUser.getId(), RESTAURANT3_ID);
+            Vote vote = voteService.createVote(savedUser.getId(), RESTAURANT3_ID);
             assertThat(vote).isNotNull();
             assertThat(vote.getUser().id()).isEqualTo(savedUser.id());
             assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
@@ -87,7 +91,7 @@ class VoteServiceTest {
             Vote savedVote = voteService.findByUser(savedUser.getId()).getFirst();
             assertThat(savedVote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
         } else {
-            assertThatThrownBy(() -> voteService.vote(savedUser.getId(), RESTAURANT3_ID))
+            assertThatThrownBy(() -> voteService.createVote(savedUser.getId(), RESTAURANT3_ID))
                     .isInstanceOf(DataConflictException.class)
                     .hasMessageContaining("Cannot vote or change vote after 11:00");
         }
@@ -103,36 +107,56 @@ class VoteServiceTest {
     })
     void updateExistingVoteForNewUserAtDifferentTimes(int hour, int minute, boolean shouldSucceed) {
         setFixedTime(clock, 10, 30);
-        Vote firstVote = voteService.vote(USER_ID, RESTAURANT1_ID);
+        User newUser = createNewUser();
+        Vote firstVote = voteService.createVote(newUser.id(), RESTAURANT1_ID);
 
         setFixedTime(clock, hour, minute);
 
         if (shouldSucceed) {
-            Vote updatedVote = voteService.vote(USER_ID, RESTAURANT3_ID);
+            Vote updatedVote = voteService.updateVote(newUser.id(), firstVote.getId(),RESTAURANT3_ID);
             assertThat(updatedVote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
             assertThat(updatedVote.id()).isEqualTo(firstVote.id());
             assertThat(updatedVote.getVoteTime()).isEqualTo(LocalTime.of(hour, minute));
         } else {
-            assertThatThrownBy(() -> voteService.vote(USER_ID, RESTAURANT3_ID))
+            assertThatThrownBy(() -> voteService.updateVote(newUser.id(), firstVote.getId(),RESTAURANT3_ID))
                     .isInstanceOf(DataConflictException.class)
-                    .hasMessageContaining("Cannot vote or change vote after 11:00");
+                    .hasMessageContaining("Cannot change vote after 11:00");
 
-            Vote unchangeVote = voteService.findByUser(USER_ID).getFirst();
+            Vote unchangeVote = voteService.findByUser(newUser.id()).getFirst();
             assertThat(unchangeVote.getRestaurant().id()).isEqualTo(RESTAURANT1_ID);
         }
+    }
+
+    @Test
+    void updateVoteForOtherUser() {
+        setFixedTime(clock, 10, 30);
+        User newUser = createNewUser();
+        Vote vote = voteService.createVote(newUser.id(), RESTAURANT1_ID);
+        assertThatThrownBy(() -> voteService.updateVote(USER_ID, vote.id(), RESTAURANT2_ID))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("You can only update your own vote");
+    }
+
+    @Test
+    void updateNonExistentVoteShouldFail() {
+        setFixedTime(clock, 10, 30);
+        assertThatThrownBy(() -> voteService.updateVote(USER_ID, NOT_FOUND, RESTAURANT1_ID))
+                .isInstanceOf(NotFoundException.class);
     }
 
 
     @Test
     void voteUserNotFound() {
-        assertThatThrownBy(() -> voteService.vote(NOT_FOUND, RESTAURANT1_ID))
+        assertThatThrownBy(() -> voteService.createVote(NOT_FOUND, RESTAURANT1_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Entity with id=" + NOT_FOUND + " not found");
     }
 
     @Test
     void voteRestaurantNotFound() {
-        assertThatThrownBy(() -> voteService.vote(USER_ID, NOT_FOUND))
+        setFixedTime(clock, 10, 30);
+        User newUser = createNewUser();
+        assertThatThrownBy(() -> voteService.createVote(newUser.id(), NOT_FOUND))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Entity with id=" + NOT_FOUND + " not found");
     }
@@ -149,14 +173,11 @@ class VoteServiceTest {
     @Test
     void voteSameRestaurantTwice() {
         setFixedTime(clock, 10, 30);
-
-        Vote firstVote = voteService.vote(USER_ID, RESTAURANT1_ID);
-        Vote secondVote = voteService.vote(USER_ID, RESTAURANT1_ID);
-
-        VOTE_MATCHER.assertMatch(firstVote, secondVote);
-
-        List<Vote> votes = voteService.findByUser(USER_ID);
-        assertThat(votes.size()).isEqualTo(3);
+        User newUser = createNewUser();
+        Vote firstVote = voteService.createVote(newUser.id(), RESTAURANT1_ID);
+        assertThatThrownBy(() -> voteService.createVote(newUser.id(), RESTAURANT1_ID))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("You have already voted today. Use update method to update your vote");
     }
 
     @Test
@@ -183,13 +204,16 @@ class VoteServiceTest {
 
         List<VoteResultTo> results = voteService.getVoteResultsForDate(date);
         assertThat(results).isNotNull();
-        assertThat(results.size()).isEqualTo(3);
-
-        VoteResultTo result = results.stream()
+        Optional<VoteResultTo> result = results.stream()
                 .filter(r -> r.getRestaurantId().equals(restaurantId))
-                .findFirst()
-                .orElse(null);
-        assertThat(Objects.requireNonNull(result).getVotesCount()).isEqualTo(expectedCount);
+                .findFirst();
+
+        if (expectedCount == 0) {
+            result.ifPresent(r -> assertThat(r.getVotesCount()).isZero());
+        } else {
+            assertThat(result).isPresent();
+            assertThat(result.get().getVotesCount()).isEqualTo(expectedCount);
+        }
     }
 
     @ParameterizedTest
@@ -211,6 +235,8 @@ class VoteServiceTest {
             assertThat(winner).isEmpty();
         }
     }
+
+
 
     @ParameterizedTest
     @CsvSource({
@@ -292,7 +318,7 @@ class VoteServiceTest {
         User newUser = createNewUser();
         VoteStatsTo beforeStats = voteService.getGeneralStats();
 
-        voteService.vote(newUser.getId(), RESTAURANT1_ID);
+        voteService.createVote(newUser.getId(), RESTAURANT1_ID);
 
         VoteStatsTo afterStats = voteService.getGeneralStats();
 
@@ -306,18 +332,7 @@ class VoteServiceTest {
         setFixedDate(clock, futureDate, 10, 30);
         List<VoteResultTo> results = voteService.getVoteResultsForDate(futureDate);
 
-        assertThat(results).isNotNull();
-        assertThat(results.size()).isEqualTo(3);
-
-        List<Integer> restaurantIds = results.stream()
-                .map(VoteResultTo::getRestaurantId)
-                .toList();
-
-        assertThat(restaurantIds).contains(RESTAURANT1_ID, RESTAURANT2_ID, RESTAURANT3_ID);
-
-        for (VoteResultTo result : results) {
-            assertThat(result.getVotesCount()).isZero();
-        }
+        assertThat(results).isEmpty();
     }
 
     private User createNewUser() {

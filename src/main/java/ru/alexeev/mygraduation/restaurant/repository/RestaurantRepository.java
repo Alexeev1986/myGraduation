@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.Query;
 import ru.alexeev.mygraduation.common.BaseRepository;
 import ru.alexeev.mygraduation.restaurant.model.Restaurant;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,7 @@ public interface RestaurantRepository extends BaseRepository<Restaurant> {
 
     @Query("SELECT r FROM Restaurant r LEFT JOIN FETCH r.menus m WHERE m.date=CURRENT_DATE")
     List<Restaurant> findAllWithTodayMenus();
+
+    @Query("SELECT DISTINCT r FROM Restaurant r JOIN FETCH r.menus m WHERE m.date=:date")
+    List<Restaurant> findAllWithMenusByDate(LocalDate date);
 }

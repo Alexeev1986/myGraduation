@@ -35,11 +35,6 @@ public class RestaurantUtil {
         return new MenuTo(menu.getId(), menu.getDate(), dishTos);
     }
 
-    public static Menu toMenu(MenuTo menuTo, Restaurant restaurant) {
-        if (menuTo == null) return null;
-        return new Menu(menuTo.getId(), restaurant, menuTo.getDate());
-    }
-
     public static MenuTo newMenuTo(LocalDate date, List<Dish> dishes) {
         return new MenuTo(null, date, toDishTos(dishes));
     }
@@ -67,6 +62,13 @@ public class RestaurantUtil {
     public static List<Dish> createdDishFromMenuItem(List<MenuItem> menuItems) {
         return menuItems.stream()
                 .map(MenuItem::getDish)
+                .toList();
+    }
+
+    public static List<DishTo> createdDishToFromMenuItem(List<MenuItem> menuItems) {
+        return menuItems.stream()
+                .map(MenuItem::getDish)
+                .map(RestaurantUtil::toDishTo)
                 .toList();
     }
 }

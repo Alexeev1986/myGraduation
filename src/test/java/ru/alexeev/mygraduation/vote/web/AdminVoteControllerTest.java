@@ -66,13 +66,13 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "-2, 2, 1, 0",
-            "-1, 1, 1, 1",
-            "0, 1, 1, 0",
-            "10, 0, 0, 0"
+            "-2, 2, 1, 0, true",
+            "-1, 1, 1, 1, true",
+            "0, 1, 1, 0, true",
+            "10, 0, 0, 0, false"
     })
     @WithUserDetails(value = ADMIN_MAIL)
-    void getRestaurantForeDate(int dayOffSet, int expectedVotes1, int expectedVotes2, int expectedVotes3 ) throws Exception {
+    void getRestaurantForeDate(int dayOffSet, int expectedVotes1, int expectedVotes2, int expectedVotes3, boolean hasMenu ) throws Exception {
         LocalDate date = LocalDate.now().plusDays(dayOffSet);
         setFixedDate(clock, date, 10, 30);
 
@@ -84,10 +84,14 @@ class AdminVoteControllerTest extends AbstractVoteControllerTest {
 
         List<VoteResultTo> actual = VOTE_RESULT_TO_MATCHER.readListFromJson(actions);
 
-        assertThat(actual).hasSize(3);
-        assertThat(getVotesForRestaurant(actual, RESTAURANT1_ID)).isEqualTo(expectedVotes1);
-        assertThat(getVotesForRestaurant(actual, RESTAURANT2_ID)).isEqualTo(expectedVotes2);
-        assertThat(getVotesForRestaurant(actual, RESTAURANT3_ID)).isEqualTo(expectedVotes3);
+        if (hasMenu) {
+            assertThat(actual).hasSize(3);
+            assertThat(getVotesForRestaurant(actual, RESTAURANT1_ID)).isEqualTo(expectedVotes1);
+            assertThat(getVotesForRestaurant(actual, RESTAURANT2_ID)).isEqualTo(expectedVotes2);
+            assertThat(getVotesForRestaurant(actual, RESTAURANT3_ID)).isEqualTo(expectedVotes3);
+        } else {
+            assertThat(actual).isEmpty();
+        }
     }
 
     @Test

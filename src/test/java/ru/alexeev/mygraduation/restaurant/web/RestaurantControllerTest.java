@@ -81,7 +81,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @Test
     @WithMockUser(roles =  {"USER", "ADMIN"})
     void getTodayMenu() throws Exception{
-        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu"))
+        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menus/today"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -100,7 +100,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @WithMockUser(roles =  {"USER", "ADMIN"})
     void getMenuByDate() throws Exception {
         LocalDate date = LocalDate.now();
-        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu-by-date").param("date", date.toString()))
+        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menus/by-date").param("date", date.toString()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -111,7 +111,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @WithMockUser(roles =  {"USER", "ADMIN"})
     void getMenuByDateNotFoundDate() throws Exception {
         LocalDate oldDate = LocalDate.of(2000, 1, 1);
-        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu-by-date").param("date", oldDate.toString()))
+        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menus/by-date").param("date", oldDate.toString()))
                 .andDo(print())
                 .andExpect(status().isNotFound());
     }
@@ -119,7 +119,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @Test
     @WithMockUser(roles =  {"USER", "ADMIN"})
     void getMenuByDateWithMissingParam() throws Exception {
-        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu-by-date"))
+        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menus/by-date"))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
     }
@@ -128,7 +128,7 @@ class RestaurantControllerTest extends AbstractControllerTest {
     @WithMockUser(roles =  {"USER", "ADMIN"})
     void getMenuByDateWithInvalidDateFormat() throws Exception {
         LocalDate oldDate = LocalDate.of(2000, 1, 1);
-        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menu-by-date").param("date", "invalid date"))
+        perform(MockMvcRequestBuilders.get(REST_URL_SlASH + RESTAURANT1_ID + "/menus/by-date").param("date", "invalid date"))
                 .andDo(print())
                 .andExpect(status().isUnprocessableContent());
     }

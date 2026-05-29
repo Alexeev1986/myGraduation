@@ -16,7 +16,7 @@ ALTER TABLE dish ALTER COLUMN id RESTART WITH 1;
 INSERT INTO users (name, email, password, enabled, registered) VALUES
     ('Admin', 'admin@gmail.com', '{noop}admin', true, now()),
     ('User', 'user@yandex.ru', '{noop}password', true, now()),
-    ('Guest', 'guest@gmail.com', '{noop}guest', true, now());
+    ('Voter', 'voter@mail.ru', '{noop}voter', true, now());
 
 
 INSERT INTO user_role (user_id, role) VALUES
@@ -40,14 +40,27 @@ INSERT INTO dish (name, price) VALUES
 
 
 INSERT INTO menu (restaurant_id, date) VALUES
-    (1, CURRENT_DATE), (2, CURRENT_DATE), (3, CURRENT_DATE);
+    -- TODAY (ID 1,2,3)
+    (1, CURRENT_DATE), (2, CURRENT_DATE), (3, CURRENT_DATE),
+    -- YESTERDAY (ID 4,5,6)
+    (1, CURRENT_DATE - 1), (2, CURRENT_DATE - 1), (3, CURRENT_DATE - 1),
+    -- TWO_DAYS_AGO (ID 7,8,9)
+    (1, CURRENT_DATE - 2), (2, CURRENT_DATE - 2), (3, CURRENT_DATE - 2);
 
 
 INSERT INTO menu_item (menu_id, dish_id) VALUES
-     (1, 1), (1, 2), (1, 4), (1, 5),
-     (2, 6), (2, 8), (2, 9), (2, 10),
-     (3, 11), (3, 12), (3, 13), (3, 14);
-
+    -- TODAY
+    (1, 1), (1, 2), (1, 4), (1, 5),
+    (2, 6), (2, 8), (2, 9), (2, 10),
+    (3, 11), (3, 12), (3, 13), (3, 14),
+    -- YESTERDAY
+    (4, 1), (4, 2), (4, 4), (4, 5),
+    (5, 6), (5, 8), (5, 9), (5, 10),
+    (6, 11), (6, 12), (6, 13), (6, 14),
+    -- TWO_DAYS_AGO
+    (7, 1), (7, 2), (7, 4), (7, 5),
+    (8, 6), (8, 8), (8, 9), (8, 10),
+    (9, 11), (9, 12), (9, 13), (9, 14);
 
 INSERT INTO vote (user_id, restaurant_id, vote_date, vote_time) VALUES
     (2, 2, CURRENT_DATE - 2, '10:15:00'),

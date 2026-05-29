@@ -12,11 +12,11 @@ public class MenuValidator {
     public void validate(MenuTo menuTo) {
 
         if (menuTo.getDate().isBefore(LocalDate.now())) {
-            throw new DataConflictException("cannot add menu for past date");
+            throw new DataConflictException("Cannot add menu for past date");
         }
 
         if (menuTo.getDishes() == null || menuTo.getDishes().isEmpty()) {
-            throw new IllegalRequestDataException("menu must contain at least one dish");
+            throw new IllegalRequestDataException("Menu must contain at least one dish");
         }
 
         long distinctCount = menuTo.getDishes().stream()

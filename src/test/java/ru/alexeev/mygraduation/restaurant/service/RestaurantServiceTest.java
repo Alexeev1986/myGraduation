@@ -65,10 +65,41 @@ class RestaurantServiceTest extends AbstractServiceTest {
     }
 
     @Test
+    void createWithDuplicateName() {
+        Restaurant duplicate = new Restaurant(null, restaurant1.getName());
+        assertThatThrownBy(() -> restaurantService.create(duplicate))
+                .isInstanceOf(DataConflictException.class);
+    }
+
+    @Test
     void update() {
         Restaurant updated = getUpdated();
         restaurantService.update(updated, RESTAURANT1_ID);
         RESTAURANT_MATCHER.assertMatch(restaurantService.get(RESTAURANT1_ID), updated);
+    }
+
+    @Test
+    void updateWithDuplicateName() {
+        Restaurant updated = new Restaurant(RESTAURANT1_ID, restaurant2.getName());
+        assertThatThrownBy(() -> restaurantService.update(updated, RESTAURANT1_ID))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("Restaurant with name Итальянский дворик already exists");
+    }
+
+    @Test
+    void updateWithSameName() {
+        Restaurant updated = new Restaurant(RESTAURANT1_ID, restaurant1.getName());
+        restaurantService.update(updated, RESTAURANT1_ID);
+
+        Restaurant result = restaurantService.get(RESTAURANT1_ID);
+        assertThat(result.getName()).isEqualTo(restaurant1.getName());
+    }
+
+    @Test
+    void updateNotFound() {
+        Restaurant updated = getUpdated();
+        assertThatThrownBy(() -> restaurantService.update(updated, NOT_FOUND))
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -86,17 +117,21 @@ class RestaurantServiceTest extends AbstractServiceTest {
 
     @Test
     void addMenu() {
-        List<DishTo> dishes = List.of(
-                new DishTo(null, "Роллы", 500),
-                new DishTo(null, "Суши", 500)
-        );
+        List<DishTo> dishes = getNewTwoDishTo();
         MenuTo menuTo = new MenuTo(null, TOMORROW, dishes);
         restaurantService.addMenu(RESTAURANT1_ID, menuTo);
         Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW);
-        // ПЕРЕДЕЛАТЬ на МАТЧЕР!
         assertThat(menu).isNotNull();
         assertThat(menu.getMenuItems()).hasSize(2);
         assertThat(menu.getMenuItems()).extracting(mi -> mi.getDish().getName()).containsExactlyInAnyOrder("Роллы", "Суши");
+    }
+
+    @Test
+    void addMenuForRestaurantNotFound() {
+        MenuTo menuTo = getNewMenuTo();
+        assertThatThrownBy(() -> restaurantService.addMenu(NOT_FOUND, menuTo))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Entity with id=" + NOT_FOUND + " not found");
     }
 
 
@@ -122,7 +157,7 @@ class RestaurantServiceTest extends AbstractServiceTest {
         } else {
             assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
                     .isInstanceOf(DataConflictException.class)
-                    .hasMessageContaining("cannot add menu for past date");
+                    .hasMessageContaining("Cannot add menu for past date");
         }
     }
 
@@ -149,25 +184,19 @@ class RestaurantServiceTest extends AbstractServiceTest {
         } else {
             assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
                     .isInstanceOf(IllegalRequestDataException.class)
-                    .hasMessageContaining("menu must contain at least one dish");
+                    .hasMessageContaining("Menu must contain at least one dish");
         }
     }
 
     @Test
     void addMenuReusesExistingDish() {
-        List<DishTo> dishes1 = List.of(
-                new DishTo(null, "Роллы", 500),
-                new DishTo(null, "Суши", 500)
-        );
+        List<DishTo> dishes1 = getNewTwoDishTo();
         restaurantService.addMenu(RESTAURANT1_ID, new MenuTo(null, TOMORROW, dishes1));
 
         Menu firstMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW);
         List<Dish> expectedDishes = createdDishFromMenuItem(firstMenu.getMenuItems());
 
-        List<DishTo> dishes2 = List.of(
-                new DishTo(null, "Роллы", 500),
-                new DishTo(null, "Суши", 500)
-        );
+        List<DishTo> dishes2 = getNewTwoDishTo();
         restaurantService.addMenu(RESTAURANT1_ID, new MenuTo(null, TOMORROW.plusDays(1), dishes2));
 
         Menu secondMenu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TOMORROW.plusDays(1));
@@ -192,15 +221,12 @@ class RestaurantServiceTest extends AbstractServiceTest {
         LocalDate pastDate = LocalDate.of(2000, 1, 1);
         assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, pastDate))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("menu not found");
+                .hasMessageContaining("Menu not found");
     }
 
     @Test
     void getMenuByRestaurantAndDate() {
-        List<DishTo> dishes = List.of(
-                new DishTo(null, "Роллы", 500),
-                new DishTo(null, "Суши", 400)
-        );
+        List<DishTo> dishes = getNewTwoDishTo();
 
         MenuTo menuTo = new MenuTo(null, TOMORROW, dishes);
         restaurantService.addMenu(RESTAURANT1_ID, menuTo);
@@ -232,6 +258,56 @@ class RestaurantServiceTest extends AbstractServiceTest {
     }
 
     @Test
+    void updateMenuForMenuNotFound() {
+        List<DishTo> dishes = getNewTwoDishTo();
+        MenuTo menuTo = new MenuTo(NOT_FOUND, TODAY, dishes);
+        assertThatThrownBy(() -> restaurantService.updateMenu(RESTAURANT1_ID, NOT_FOUND, menuTo))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Entity with id=" + NOT_FOUND + " not found");
+    }
+
+    @Test
+    void updateMenuForWrongRestaurant() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        List<DishTo> dishes = getNewDishTo();
+        MenuTo menuTo = new MenuTo(menu.id(), TODAY, dishes);
+        assertThatThrownBy(() -> restaurantService.updateMenu(RESTAURANT2_ID, menu.id(), menuTo))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("Menu does not belong to restaurant");
+    }
+
+    @Test
+    void updateMenuWithDuplicateDishes() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        List<DishTo> duplicateDishes = getDuplicatedTwoDishTo();
+        MenuTo menuTo = new MenuTo(menu.id(), TODAY, duplicateDishes);
+        assertThatThrownBy(() -> restaurantService.updateMenu(RESTAURANT1_ID, menu.id(), menuTo))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("Menu cannot contain duplicate dishes");
+    }
+
+    @Test
+    void updateMenuWithPastDate() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        LocalDate pastDate = LocalDate.now().minusDays(1);
+        List<DishTo> dishes = getNewTwoDishTo();
+        MenuTo menuTo = new MenuTo(menu.id(), pastDate, dishes);
+
+        assertThatThrownBy(() -> restaurantService.updateMenu(RESTAURANT1_ID, menu.id(), menuTo))
+                .isInstanceOf(DataConflictException.class);
+    }
+
+    @Test
+    void updateMenuWithEmptyDishes() {
+        Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
+        MenuTo menuTo = new MenuTo(menu.id(), TODAY, List.of());
+
+        assertThatThrownBy(() -> restaurantService.updateMenu(RESTAURANT1_ID, menu.id(), menuTo))
+                .isInstanceOf(IllegalRequestDataException.class);
+    }
+
+
+    @Test
     void deleteMenu() {
         Menu menu = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY);
         assertThat(menu).isNotNull();
@@ -240,7 +316,14 @@ class RestaurantServiceTest extends AbstractServiceTest {
 
         assertThatThrownBy(() -> restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, TODAY))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("menu not found");
+                .hasMessageContaining("Menu not found");
+    }
+
+    @Test
+    void deleteMenuWithMenuNotFound() {
+        assertThatThrownBy(() -> restaurantService.deleteMenu(RESTAURANT1_ID, NOT_FOUND))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Entity with id=" + NOT_FOUND + " not found");
     }
 
     @Test
@@ -250,6 +333,6 @@ class RestaurantServiceTest extends AbstractServiceTest {
 
         assertThatThrownBy(() -> restaurantService.deleteMenu(RESTAURANT2_ID, menu.id()))
                 .isInstanceOf(DataConflictException.class)
-                .hasMessageContaining("menu does not belong to restaurant");
+                .hasMessageContaining("Menu does not belong to restaurant");
     }
 }
