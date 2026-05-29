@@ -50,11 +50,11 @@ mvn spring-boot:run
 
 Для тестирования можно использовать следующие учетные записи:
 
-| Email | Пароль | Роль |
-|-------|--------|------|
-| admin@gmail.com | admin | ADMIN |
-| user@yandex.ru | password | USER |
-| guest@gmail.com | guest | USER |
+| Email           | Пароль   | Роль   |
+|-----------------|----------|--------|
+| admin@gmail.com | admin    | ADMIN  |
+| user@yandex.ru  | password | USER   |
+| voter@mail.ru   | voter    | USER   |
 
 Аутентификация Basic. Почти все запросы требуют авторизации, кроме регистрации и Swagger.
 
@@ -62,12 +62,12 @@ mvn spring-boot:run
 
 ### Рестораны (доступно USER и ADMIN)
 
-| Метод | URL                                 | Описание                             |
-|-------|-------------------------------------|--------------------------------------|
-| GET | /api/restaurants                    | Список ресторанов с сегодняшним меню   |
-| GET | /api/restaurants/{id}               | Ресторан по ID                         |
-| GET | /api/restaurants/{id}/menus/today   | Сегодняшнее меню ресторана             |
-| GET | /api/restaurants/{id}/menus/by-date | Меню по дате (параметр date)           |
+| Метод   | URL                                 | Описание                             |
+|---------|-------------------------------------|--------------------------------------|
+| GET     | /api/restaurants                    | Список ресторанов с сегодняшним меню |
+| GET     | /api/restaurants/{id}               | Ресторан по ID                       |
+| GET     | /api/restaurants/{id}/menus/today   | Сегодняшнее меню ресторана           |
+| GET     | /api/restaurants/{id}/menus/by-date | Меню по дате (параметр date)         |
 
 ### Управление ресторанами (только ADMIN)
 
@@ -82,41 +82,41 @@ mvn spring-boot:run
 
 ### Голосование (доступно USER)
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| POST | /api/votes?restaurantId={id} | Проголосовать или изменить голос |
-| GET | /api/votes/results/today | Результаты голосования за сегодня |
-| GET | /api/votes/results/winner | Победитель сегодняшнего голосования |
+| Метод  | URL                          | Описание                            |
+|--------|------------------------------|-------------------------------------|
+| POST   | /api/votes?restaurantId={id} | Проголосовать или изменить голос    |
+| GET    | /api/votes/results/today     | Результаты голосования за сегодня   |
+| GET    | /api/votes/results/winner    | Победитель сегодняшнего голосования |
 
 ### Администрирование голосов (только ADMIN)
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | /api/admin/votes/results?date={date} | Результаты за конкретную дату |
-| GET | /api/admin/votes/results/range?start={start}&end={end} | Результаты за период |
-| GET | /api/admin/votes/stats | Общая статистика голосования |
+| Метод | URL                                                    | Описание                      |
+|-------|--------------------------------------------------------|-------------------------------|
+| GET   | /api/admin/votes/results?date={date}                   | Результаты за конкретную дату |
+| GET   | /api/admin/votes/results/range?start={start}&end={end} | Результаты за период          |
+| GET   | /api/admin/votes/stats                                 | Общая статистика голосования  |
 
 ### Пользователи (только ADMIN)
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | /api/admin/users | Список всех пользователей |
-| GET | /api/admin/users/{id} | Пользователь по ID |
-| GET | /api/admin/users/{id}/votes | История голосов пользователя |
-| GET | /api/admin/users/by-email?email={email} | Поиск по email |
-| POST | /api/admin/users | Создать пользователя |
-| PUT | /api/admin/users/{id} | Обновить пользователя |
-| PATCH | /api/admin/users/{id}?enabled={true/false} | Блокировка/разблокировка |
-| DELETE | /api/admin/users/{id} | Удалить пользователя |
+| Метод  | URL                                        | Описание                     |
+|--------|--------------------------------------------|------------------------------|
+| GET    | /api/admin/users                           | Список всех пользователей    |
+| GET    | /api/admin/users/{id}                      | Пользователь по ID           |
+| GET    | /api/admin/users/{id}/votes                | История голосов пользователя |
+| GET    | /api/admin/users/by-email?email={email}    | Поиск по email               |
+| POST   | /api/admin/users                           | Создать пользователя         |
+| PUT    | /api/admin/users/{id}                      | Обновить пользователя        |
+| PATCH  | /api/admin/users/{id}?enabled={true/false} | Блокировка/разблокировка     |
+| DELETE | /api/admin/users/{id}                      | Удалить пользователя         |
 
 ### Профиль пользователя
 
-| Метод | URL | Доступ | Описание |
-|-------|-----|--------|----------|
-| GET | /api/profile | USER | Получить свой профиль |
-| PUT | /api/profile | USER | Обновить свой профиль |
-| DELETE | /api/profile | USER | Удалить свой профиль |
-| POST | /api/profile | PUBLIC | Регистрация нового пользователя |
+| Метод  | URL          | Доступ  | Описание                        |
+|--------|--------------|---------|---------------------------------|
+| GET    | /api/profile | USER    | Получить свой профиль           |
+| PUT    | /api/profile | USER    | Обновить свой профиль           |
+| DELETE | /api/profile | USER    | Удалить свой профиль            |
+| POST   | /api/profile | PUBLIC  | Регистрация нового пользователя |
 
 ## Примеры curl команд
 
@@ -139,11 +139,11 @@ curl -X GET "http://localhost:8080/api/restaurants/1/menus/by-date?date=2026-05-
 ```
 # 5. Создать голос
 ```bash
-curl -X POST "http://localhost:8080/api/votes?restaurantId=1" -u user@yandex.ru:password
+curl -X POST "http://localhost:8080/api/votes?restaurantId=1" -u voter@mail.ru:voter
 ```
 # 6. Изменить голос (только до 11:00)
 ```bash
-curl -X PUT "http://localhost:8080/api/votes/1?restaurantId=2" -u user@yandex.ru:password
+curl -X PUT "http://localhost:8080/api/votes/7?restaurantId=2" -u user@yandex.ru:password
 ```
 # 7. Получить результаты голосования за сегодня
 ```bash
@@ -179,7 +179,7 @@ curl -X DELETE "http://localhost:8080/api/admin/restaurants/1" -u admin@gmail.co
 ```
 # 15. Зарегистрировать нового пользователя
 ```bash
-curl -X POST "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новый пользователь\",\"email\":\"newuser@mail.ru\",\"password\":\"password\"}" -u admin@gmail.com:admin
+curl -X POST "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новый пользователь\",\"email\":\"newuser@mail.ru\",\"password\":\"password\",\"enabled\":true,\"roles\":[\"USER\"]}"
 ```
 # 16. Получить свой профиль
 ```bash
@@ -187,7 +187,7 @@ curl -X GET "http://localhost:8080/api/profile" -u user@yandex.ru:password
 ```
 # 17. Обновить свой профиль
 ```bash
-curl -X PUT "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"name\":\"Новое имя\",\"email\":\"user@yandex.ru\",\"password\":\"newpassword\",\"enabled\":true,\"roles\":[\"USER\"]}" -u user@yandex.ru:password
+curl -X PUT "http://localhost:8080/api/profile" -H "Content-Type: application/json" -d "{\"id\":2,\"name\":\"Новое имя\",\"email\":\"user@yandex.ru\",\"password\":\"newpassword\",\"enabled\":true,\"roles\":[\"USER\"]}" -u user@yandex.ru:password
 ```
 # 18. Получить всех пользователей (ADMIN)
 ```bash
@@ -203,7 +203,7 @@ curl -X PATCH "http://localhost:8080/api/admin/users/2?enabled=false" -H "Conten
 ```
 # 21. Получить результаты за конкретную дату (ADMIN)
 ```bash
-curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-07" -u admin@gmail.com:admin
+curl -X GET "http://localhost:8080/api/admin/votes/results?date=2026-05-29" -u admin@gmail.com:admin
 ```
 # 22. Получить результаты за период (ADMIN)
 ```bash
@@ -216,17 +216,17 @@ curl -X GET "http://localhost:8080/api/admin/votes/stats" -u admin@gmail.com:adm
 
 ## HTTP статусы ответов
 
-| Статус | Описание |
-|--------|----------|
-| 200 | Успешный запрос (GET) |
-| 201 | Ресурс успешно создан |
-| 204 | Успешное удаление или обновление |
-| 400 | Неверный запрос |
-| 401 | Требуется аутентификация |
-| 403 | Недостаточно прав |
-| 404 | Ресурс не найден |
-| 409 | Конфликт (голосование после дедлайна или дубликат) |
-| 422 | Ошибка валидации |
+| Статус  | Описание                                           |
+|---------|----------------------------------------------------|
+| 200     | Успешный запрос (GET)                              |
+| 201     | Ресурс успешно создан                              |
+| 204     | Успешное удаление или обновление                   |
+| 400     | Неверный запрос                                    |
+| 401     | Требуется аутентификация                           |
+| 403     | Недостаточно прав                                  |
+| 404     | Ресурс не найден                                   |
+| 409     | Конфликт (голосование после дедлайна или дубликат) |
+| 422     | Ошибка валидации                                   |
 
 ## Заключение
 
