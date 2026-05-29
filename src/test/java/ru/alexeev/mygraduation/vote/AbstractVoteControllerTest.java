@@ -7,7 +7,7 @@ import ru.alexeev.mygraduation.vote.service.VoteService;
 
 import java.time.Clock;
 
-public class AbstractVoteControllerTest extends AbstractControllerTest {
+public abstract class AbstractVoteControllerTest extends AbstractControllerTest {
     @Autowired
     protected VoteService voteService;
 

@@ -10,6 +10,6 @@ import org.springframework.test.context.jdbc.SqlConfig;
 @ActiveProfiles("test")
 @Sql(scripts = "classpath:data.sql", config = @SqlConfig(encoding = "UTF-8"), executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 @ExtendWith(TimingExtension.class)
-public class AbstractServiceTest {
+public abstract class AbstractServiceTest {
 
 }
