@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.alexeev.mygraduation.common.error.NotFoundException;
 import ru.alexeev.mygraduation.user.model.User;
 import ru.alexeev.mygraduation.user.repository.UserRepository;
 import ru.alexeev.mygraduation.user.to.UserTo;
@@ -65,12 +64,4 @@ public class UserService {
         user.setEnabled(enabled);
         userRepository.save(user);
     }
-
-    @Transactional(readOnly = true)
-    public User getWithVotes(int id) {
-        log.info("get user {} with votes", id);
-        return userRepository.getWithVotes(id)
-                .orElseThrow(() -> new NotFoundException("User " + id + "not found"));
-    }
-
 }

@@ -15,9 +15,6 @@ public interface UserRepository extends BaseRepository<User> {
     @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
     Optional<User> findByEmailIgnoreCase(String email);
 
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.votes WHERE u.id=:id")
-    Optional<User> getWithVotes(int id);
-
     default User getExistedByEmail(String email) {
         return findByEmailIgnoreCase(email).orElseThrow(
                 () -> new NotFoundException("User with email=" + email + " not found")

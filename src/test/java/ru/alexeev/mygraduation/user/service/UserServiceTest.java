@@ -100,11 +100,4 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.create(createToFromUser(invalid)))
                 .isInstanceOf(ConstraintViolationException.class);
     }
-
-    @Test
-    void getWithVotes() {
-        User userWithVotes = userService.getWithVotes(USER_ID);
-        assertThat(userWithVotes.getVotes()).isNotNull();
-
-    }
 }
