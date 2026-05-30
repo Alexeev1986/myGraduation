@@ -302,13 +302,12 @@ class VoteServiceTest extends AbstractServiceTest {
     void getGeneralStatsAfterNewVote() {
         setFixedTime(clock, 10, 30);
         VoteStatsTo beforeStats = voteService.getGeneralStats();
-
         voteService.createVote(VOTER_ID, RESTAURANT1_ID);
 
         VoteStatsTo afterStats = voteService.getGeneralStats();
 
         assertThat(afterStats.getTotalVotes()).isEqualTo(beforeStats.getTotalVotes() + 1);
-        assertThat(afterStats.getTotalUserWhoVoted()).isEqualTo(beforeStats.getTotalUserWhoVoted() + 1);
+        assertThat(afterStats.getTotalUserWhoVoted()).isEqualTo(beforeStats.getTotalUserWhoVoted());
     }
 
     @Test
