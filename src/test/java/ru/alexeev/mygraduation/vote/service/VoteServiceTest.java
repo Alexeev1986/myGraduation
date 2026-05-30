@@ -63,28 +63,22 @@ class VoteServiceTest extends AbstractServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "10, 30, true",
-            "10, 59, true",
-            "11, 0, true",
-            "11, 1, true",
-            "12, 0, true"
+            "10, 30",
+            "10, 59",
+            "11, 0",
+            "11, 1",
+            "12, 0"
     })
-    void createNewVoteForNewUserAtDifferentTimes(int hour, int minute, boolean shouldSucceed) {
+    void createNewVoteForNewUserAtDifferentTimes(int hour, int minute) {
         setFixedTime(clock, hour, minute);
 
-        if (shouldSucceed) {
-            Vote vote = voteService.createVote(VOTER_ID, RESTAURANT3_ID);
-            assertThat(vote).isNotNull();
-            assertThat(vote.getUser().id()).isEqualTo(VOTER_ID);
-            assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
+        Vote vote = voteService.createVote(VOTER_ID, RESTAURANT3_ID);
+        assertThat(vote).isNotNull();
+        assertThat(vote.getUser().id()).isEqualTo(VOTER_ID);
+        assertThat(vote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
 
-            Vote savedVote = voteService.findByUser(VOTER_ID).getFirst();
-            assertThat(savedVote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
-        } else {
-            assertThatThrownBy(() -> voteService.createVote(VOTER_ID, RESTAURANT3_ID))
-                    .isInstanceOf(DataConflictException.class)
-                    .hasMessageContaining("Cannot vote or change vote after 11:00");
-        }
+        Vote savedVote = voteService.findByUser(VOTER_ID).getFirst();
+        assertThat(savedVote.getRestaurant().id()).isEqualTo(RESTAURANT3_ID);
     }
 
     @ParameterizedTest

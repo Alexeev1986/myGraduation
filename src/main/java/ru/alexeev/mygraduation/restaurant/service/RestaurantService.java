@@ -80,11 +80,10 @@ public class RestaurantService {
         menuValidator.validate(menuTo);
 
         LocalDate date = menuTo.getDate();
-        menuRepository.getByRestaurantAndDate(restaurantId, date)
-                .ifPresent(menu -> {
-                        menuRepository.delete(menu);
-                        menuRepository.flush();
-                });
+
+        if (menuRepository.getByRestaurantAndDate(restaurantId, date).isPresent()) {
+            throw new DataConflictException("Menu for date " + date + " already exists. Use PUT to update.");
+        }
 
         Menu menu = menuRepository.save(new Menu(null, restaurant, date));
 

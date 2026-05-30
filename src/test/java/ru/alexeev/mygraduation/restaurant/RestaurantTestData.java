@@ -107,8 +107,8 @@ public class RestaurantTestData {
         return newMenuTo(TOMORROW, List.of(dish1, dish2, dish4, dish5));
     }
 
-    public static MenuTo getUpdatedMenuToForRestaurant1() {
-        return newMenuTo(TOMORROW, List.of(dish1, dish2, dish3, dish4, dish5));
+    public static MenuTo getUpdatedMenuToForRestaurant1WithToday() {
+        return newMenuTo(TODAY, List.of(dish1, dish2, dish3, dish4, dish5));
     }
 
     public static MenuTo getMenuWithNullDate() {

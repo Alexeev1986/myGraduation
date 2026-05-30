@@ -144,21 +144,33 @@ class RestaurantServiceTest extends AbstractServiceTest {
             "2, true",
     })
     void addMenuForDifferentDates(int daysOffset, boolean shouldSucceed) {
+        Restaurant newRestaurant = restaurantService.create(new Restaurant(null, "Test Restaurant For Dates"));
+        int newRestaurantId = newRestaurant.getId();
         LocalDate date = LocalDate.now().plusDays(daysOffset);
         List<Dish> dishes = List.of(dish1, dish2);
         MenuTo menuTo = newMenuTo(date, dishes);
         if (shouldSucceed) {
-            restaurantService.addMenu(RESTAURANT1_ID, menuTo);
-            Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, date);
+            restaurantService.addMenu(newRestaurantId, menuTo);
+            Menu created = restaurantService.getMenuByRestaurantAndDate(newRestaurantId, date);
             assertThat(created).isNotNull();
             assertThat(created.getDate()).isEqualTo(date);
             List<Dish> actualItems = createdDishFromMenuItem(created.getMenuItems());
             DISH_MATCHER.assertMatch(actualItems, dishes);
         } else {
-            assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
+            assertThatThrownBy(() -> restaurantService.addMenu(newRestaurantId, menuTo))
                     .isInstanceOf(DataConflictException.class)
                     .hasMessageContaining("Cannot add menu for past date");
         }
+    }
+
+    @Test
+    void addMenuForDateWhenMenuAlreadyExists() {
+        List<Dish> dishes = List.of(dish1, dish2);
+        MenuTo menuTo = newMenuTo(TODAY, dishes);
+
+        assertThatThrownBy(() -> restaurantService.addMenu(RESTAURANT1_ID, menuTo))
+                .isInstanceOf(DataConflictException.class)
+                .hasMessageContaining("already exists. Use PUT to update");
     }
 
     @ParameterizedTest

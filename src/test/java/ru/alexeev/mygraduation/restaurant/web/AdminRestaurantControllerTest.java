@@ -246,26 +246,13 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void addMenuAndUpdateExisting() throws Exception {
-        MenuTo firstMenu = getNewMenuToForRestaurant1();
+    void addMenuWhenMenuAlreadyExists() throws Exception {
+        MenuTo menuTo = getUpdatedMenuToForRestaurant1WithToday();
         perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(JsonUtil.writeValue(firstMenu)))
+                .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
-                .andExpect(status().isCreated());
-
-        MenuTo updateMenuTo = getUpdatedMenuToForRestaurant1();
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JsonUtil.writeValue(updateMenuTo)))
-                .andDo(print())
-                .andExpect(status().isCreated());
-
-        Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, updateMenuTo.getDate());
-        assertThat(created).isNotNull();
-        List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
-        List<Dish> expectedDishes = toDishes(updateMenuTo.getDishes());
-        DISH_MATCHER.assertMatch(actualDishes, expectedDishes);
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -366,18 +353,21 @@ class AdminRestaurantControllerTest extends AbstractControllerTest {
     })
     @WithMockUser(roles = "ADMIN")
     void addMenuForDifferentDates(int daysOffset, int expectedStatus, boolean shouldSucceed) throws Exception {
-        LocalDate date = LocalDate.now().plusDays(daysOffset);
+        Restaurant newRestaurant = restaurantService.create(new Restaurant(null, "Test Restaurant For Dates"));
+        int newRestaurantId = newRestaurant.getId();
+
+        LocalDate date = TODAY.plusDays(daysOffset);
         List<Dish> dishes = List.of(dish1, dish2);
         MenuTo menuTo = newMenuTo(date, dishes);
 
-        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + RESTAURANT1_ID + "/menus")
+        perform(MockMvcRequestBuilders.post(REST_URL_SLASH + newRestaurantId + "/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(JsonUtil.writeValue(menuTo)))
                 .andDo(print())
                 .andExpect(status().is(expectedStatus));
 
         if (shouldSucceed) {
-            Menu created = restaurantService.getMenuByRestaurantAndDate(RESTAURANT1_ID, date);
+            Menu created = restaurantService.getMenuByRestaurantAndDate(newRestaurantId, date);
             assertThat(created).isNotNull();
             assertThat(created.getDate()).isEqualTo(date);
             List<Dish> actualDishes = createdDishFromMenuItem(created.getMenuItems());
