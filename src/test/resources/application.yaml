@@ -9,5 +9,7 @@ spring:
     url: jdbc:h2:mem:mygraduation
 
   cache:
-    type: none
-
+    type: caffeine
+    cache-names: restaurant_with_menu, menus_by_restaurant, vote_results, today_winner
+    caffeine:
+      spec: maximumSize=10, expireAfterWrite=1m

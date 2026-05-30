@@ -19,7 +19,7 @@ spring:
     type: caffeine
     cache-names: restaurant_with_menu, menus_by_restaurant, vote_results, today_winner
     caffeine:
-      spec: maximumSize=100, expireAfterWrite=1h
+      spec: maximumSize=100, expireAfterWrite=1m
 
   servlet:
     encoding:
