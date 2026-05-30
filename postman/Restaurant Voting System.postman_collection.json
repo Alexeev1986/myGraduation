@@ -392,6 +392,48 @@
       "response": []
     },
     {
+      "name": "10.a. Check menu after create",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/restaurants/1/menus/by-date?date=2026-05-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "restaurants",
+            "1",
+            "menus",
+            "by-date"
+          ],
+          "query": [
+            {
+              "key": "date",
+              "value": "2026-05-31"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "11. Update menu (ADMIN)",
       "request": {
         "auth": {
@@ -413,7 +455,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\"id\":4,\"date\":\"2026-05-31\",\"dishes\":[{\"name\":\"Вареники с картошкой\",\"price\":400},{\"name\":\"Компот\",\"price\":80}]}",
+          "raw": "{\"id\":10,\"date\":\"2026-05-31\",\"dishes\":[{\"name\":\"Вареники с картошкой\",\"price\":400},{\"name\":\"Компот\",\"price\":80}]}",
           "options": {
             "raw": {
               "language": "json"
@@ -421,7 +463,7 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/admin/restaurants/1/menus/4",
+          "raw": "{{baseUrl}}/api/admin/restaurants/1/menus/10",
           "host": [
             "{{baseUrl}}"
           ],
@@ -431,7 +473,49 @@
             "restaurants",
             "1",
             "menus",
-            "4"
+            "10"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11.a. Check menu after update",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/restaurants/1/menus/by-date?date=2026-05-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "restaurants",
+            "1",
+            "menus",
+            "by-date"
+          ],
+          "query": [
+            {
+              "key": "date",
+              "value": "2026-05-31"
+            }
           ]
         }
       },
@@ -458,7 +542,7 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/admin/restaurants/1/menus/4",
+          "raw": "{{baseUrl}}/api/admin/restaurants/1/menus/10",
           "host": [
             "{{baseUrl}}"
           ],
@@ -468,7 +552,49 @@
             "restaurants",
             "1",
             "menus",
-            "4"
+            "10"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12.a. Check menu after delete",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/restaurants/1/menus/by-date?date=2026-05-31",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "restaurants",
+            "1",
+            "menus",
+            "by-date"
+          ],
+          "query": [
+            {
+              "key": "date",
+              "value": "2026-05-31"
+            }
           ]
         }
       },
@@ -519,6 +645,40 @@
       "response": []
     },
     {
+      "name": "13.a. Check restaurant after update",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/restaurants/1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "restaurants",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "14. Delete restaurant (ADMIN)",
       "request": {
         "auth": {
@@ -538,8 +698,17 @@
         },
         "method": "DELETE",
         "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
         "url": {
-          "raw": "{{baseUrl}}/api/admin/restaurants/1",
+          "raw": "{{baseUrl}}/api/admin/restaurants/4",
           "host": [
             "{{baseUrl}}"
           ],
@@ -547,7 +716,41 @@
             "api",
             "admin",
             "restaurants",
-            "1"
+            "4"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14.a. Check restaurant after delete",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/restaurants/4",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "restaurants",
+            "4"
           ]
         }
       },
@@ -645,6 +848,39 @@
             }
           }
         },
+        "url": {
+          "raw": "{{baseUrl}}/api/profile",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "17.a. Check profile after update",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "newpassword",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "user@yandex.ru",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/profile",
           "host": [
@@ -764,6 +1000,41 @@
               "key": "enabled",
               "value": "false"
             }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "20.a. Check user enabled status",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "username",
+              "value": "admin@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/users/2",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "users",
+            "2"
           ]
         }
       },
